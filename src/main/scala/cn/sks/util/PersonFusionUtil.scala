@@ -27,9 +27,9 @@ object PersonFusionUtil {
            targetPerson  :目标表
            targetID     :目标表表唯一值字段（person_id）
     返回值（元组）  :（rel_person_one,rel_person_more,person_not_exists）
-          rel_person_one      : 一对一 （原始的一个人对应 目标库中的一个人）
-          rel_person_more    : 一对多 （原始的一个人对应 目标库中的多个人）
-          person_not_exists : 未融合的人（原始表 中的人 在目标库中找不到对应关系）
+          rel_person_one      : 一对一 （原始表的一个人对应 目标表中的一个人）
+          rel_person_more    : 一对多 （原始表的一个人对应 目标表中的多个人）
+          person_not_exists : 未融合的人（原始表 中的人 在目标表中找不到对应关系）
    */
 
   def fusionPerson_Org(spark:SparkSession,originPerson:DataFrame,originID:String,targetPerson:DataFrame,targetID:String):(DataFrame,DataFrame,DataFrame) = {
@@ -40,14 +40,14 @@ object PersonFusionUtil {
     originPerson.createOrReplaceTempView("temp_origin")
     targetPerson.createOrReplaceTempView("temp_target")
 
-    //  目标表中的人
+    //  原始表
     val person_origin = spark.sql(
       """
         |select CleanFusion(zh_name) as clean_zh_name,CleanFusion(org_name) as clean_org_name,*  from temp_origin
         |""".stripMargin)
     person_origin.createOrReplaceTempView("person_origin")
 
-    // 目标库中的人
+    // 目标表
     val person_target =spark.sql(
       s"""
         |select CleanFusion(zh_name) as clean_zh_name, CleanFusion(org_name) as clean_org_name,${originID} from temp_target
@@ -66,11 +66,11 @@ object PersonFusionUtil {
     rel_person.createOrReplaceTempView("rel_person")
 
 
-    // 一对一 （原始的一个人对应 目标库中的一个人）
+    // 一对一 （原始的一个人对应 目标表中的一个人）
     val rel_person_one = spark.sql("select * from rel_person where originID in (select originID from rel_person group by originID having count(originID)<2)")
-    // 一对多 （原始的一个人对应 目标库中的多个人）
+    // 一对多 （原始的一个人对应 目标表中的多个人）
     val rel_person_more = spark.sql("select * from rel_person where originID in (select originID from rel_person group by originID having count(originID)>1)")
-    // 未融合的人（原始表 中的人 在目标库中找不到对应关系）
+    // 未融合的人（原始表 中的人 在目标表中找不到对应关系）
     val person_not_exists = spark.sql(s"select * from  person_origin a  where not exists (select * from rel_person b where a.${originID}=b.originID)")
         .drop("clean_zh_name","clean_org_name")
 

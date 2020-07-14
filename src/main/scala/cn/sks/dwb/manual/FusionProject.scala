@@ -1,6 +1,6 @@
 package cn.sks.dwb.manual
 
-import cn.sks.util.{BuildOrgIDUtil, DefineUDF}
+import cn.sks.util.DefineUDF
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object FusionProject {
@@ -32,8 +32,8 @@ object FusionProject {
           |select id,
           |project_name as zh_title,
           |project_no as prj_no ,
-          |project_person as psn_name,
-          |person_organization as org_name,
+          |zh_name as psn_name,
+          | org_name,
           |project_year as approval_year,
           |CleanDate(start_date) as start_date,
           |CleanDate(end_date) as end_date,
@@ -68,7 +68,7 @@ object FusionProject {
       """
         |select if(person_id is null ,a.id,person_id) as person_id,a.*
         | from  person_project_not_exists a
-        |  left join dwb.wb_person_manual_excel_project_person_rel_one b
+        |  left join dwb.wb_person_excel_project_person_rel_one b
         |  on a.id =b.id
       """.stripMargin).drop("id")
 
@@ -82,13 +82,16 @@ object FusionProject {
     val manual_reward_project = spark.sql(
       """
         |select
-        |id,
+        |a.id,
         |project_name as zh_title,
         |project_no as prj_no,
-        |psn_name,
+        |if(person_id is null ,a.id,person_id) as person_id,
+        |zh_name as psn_name,
         |org_name,
         |CleanFusion(project_name) as clean_zh_title
-        |from dwd.wd_manual_excel_reward_project
+        |from dwd.wd_manual_excel_reward_project  a
+        |left join dwb.wb_person_excel_reward_person_rel_one b
+        |on a.id=b.id
       """.stripMargin)
     manual_reward_project.createOrReplaceTempView("manual_reward_project")
     // 以 origin_project_temp 为基准，根据zh_title 融合奖励中的项目
@@ -102,14 +105,16 @@ object FusionProject {
       """.stripMargin)
     rel_reward_project.createOrReplaceTempView("rel_reward_project")
 
-    val reward_project_not_exists = spark.sql("select md5(clean_zh_title) as project_id,id as person_id,* from manual_reward_project a  where not exists (select * from rel_reward_project b where a.id=b.id)")
+    val reward_project_not_exists = spark.sql("select md5(clean_zh_title) as project_id,* from manual_reward_project a  where not exists (select * from rel_reward_project b where a.id=b.id)")
       .drop("id").drop("clean_zh_title").dropDuplicates("project_id")
 
     val wb_project = completionFields(spark,reward_project_not_exists,project_nsfc).union(project_temp)
 
-    // 项目对应关系
-    rel_person_project.union(rel_reward_project).toDF("id","project_id_nsfc").createOrReplaceTempView("wb_manual_excel_project_nsfc_rel")
+    // excel 与基金委项目之间的对应 的关系
+    val wb_manual_excel_project_nsfc_rel = rel_person_project.union(rel_reward_project).toDF("id","project_id_nsfc")
+    wb_manual_excel_project_nsfc_rel.createOrReplaceTempView("wb_manual_excel_project_nsfc_rel")
 
+    // 项目与奖励 的关系
     val wb_project_reward = spark.sql(
       """
         |select
@@ -120,7 +125,7 @@ object FusionProject {
         |left join wb_manual_excel_project_nsfc_rel b
         |on a.id=b.id
       """.stripMargin)
-
+    // 项目与专项 的关系
     val wb_project_special_project =spark.sql(
       """
         |select
@@ -131,17 +136,17 @@ object FusionProject {
         | on a.id=b.id
       """.stripMargin)
 
-
+    // 项目与人 的关系 (participation)
     val project_person_participation = spark.sql(
       """
         |select md5(a.prj_code) as project_id,a.person_id,a.org_name
         |from ods.o_nsfc_project_person a
         | where  exists (select * from project_nsfc b where md5(a.prj_code)=b.project_id)
       """.stripMargin)
-
+    // 项目与单位 的关系(lead)
     val project_org_lead= BuildOrgIDUtil.buildOrganizationID(spark,wb_project,"org_name","dwb.wb_organization_project")
       .select("project_id","org_id").show()
-
+    // 项目与单位 的关系（participation）
     val project_org_participation= BuildOrgIDUtil.buildOrganizationID(spark,project_person_participation,"org_name","dwb.wb_organization_project")
       .select("project_id","org_id").show()
 
@@ -150,9 +155,10 @@ object FusionProject {
     wb_project_reward.createOrReplaceTempView("wb_project_reward")
     wb_project_special_project.createOrReplaceTempView("wb_project_special_project")
 
-
-
-
+    wb_project.show(5)
+    wb_project_reward.show(5)
+    wb_project_special_project.show(5)
+    project_person_participation.show(5)
 
 
 //    spark.sql("insert into table dwb.wb_manual_excel_project_nsfc_rel select * from wb_manual_excel_project_nsfc_rel")
@@ -164,13 +170,6 @@ object FusionProject {
 //
 //    spark.sql("insert into table dwb.wb_project_person_lead            select project_id,person_id from wb_project")
 //    spark.sql("insert into table dwb.wb_project_person_participation   select  project_id,person_id from project_person_participation")
-
-
-
-
-
-
-
 
 
 

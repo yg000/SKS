@@ -6,19 +6,7 @@ import scala.reflect.internal.util.TableDef.Column
 
 object PersonFusionUtil {
 
-  def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder()
-      .master("local[12]")
-      .appName("PersonFusionUtil")
-      .config("hive.metastore.uris","thrift://10.0.82.132:9083")
-      .enableHiveSupport()
-      .getOrCreate()
-    val originPerson= spark.sql("select * from dwd.wd_person_nsfc  limit 10000")
-    val targetPerson= spark.sql("select * from dwd.wd_person_arp")
-
-    val tuple: (DataFrame, DataFrame, DataFrame) = fusionPerson_Org(spark, originPerson, "person_id", originPerson, "person_id")
-  }
-  /* 规则：人名和单位名字融合
+ /* 规则：人名和单位名字融合
      人名默认为 zh_name,单位名 默认为 org_name
     参数：
            spark
@@ -31,8 +19,7 @@ object PersonFusionUtil {
           rel_person_more    : 一对多 （原始表的一个人对应 目标表中的多个人）
           person_not_exists : 未融合的人（原始表 中的人 在目标表中找不到对应关系）
    */
-
-  def fusionPerson_Org(spark:SparkSession,originPerson:DataFrame,originID:String,targetPerson:DataFrame,targetID:String):(DataFrame,DataFrame,DataFrame) = {
+ def fusionPerson_Org(spark:SparkSession,originPerson:DataFrame,originID:String,targetPerson:DataFrame,targetID:String):(DataFrame,DataFrame,DataFrame) = {
     spark.sqlContext.udf.register("CleanFusion",(str:String) =>{
       DefineUDF.clean_fusion(str)
     })
@@ -50,7 +37,7 @@ object PersonFusionUtil {
     // 目标表
     val person_target =spark.sql(
       s"""
-        |select CleanFusion(zh_name) as clean_zh_name, CleanFusion(org_name) as clean_org_name,${originID} from temp_target
+        |select CleanFusion(zh_name) as clean_zh_name, CleanFusion(org_name) as clean_org_name,${targetID} from temp_target
         |""".stripMargin)
     person_target.createOrReplaceTempView("person_target")
 

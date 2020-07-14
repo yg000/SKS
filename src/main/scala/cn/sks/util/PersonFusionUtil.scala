@@ -24,13 +24,13 @@ object PersonFusionUtil {
    spark.sqlContext.udf.register("CleanFusion",(str:String) =>{
      DefineUDF.clean_fusion(str)
     })
-
    originPerson.createOrReplaceTempView("temp_origin")
    targetPerson.createOrReplaceTempView("temp_target")
    //  原始表
    val person_origin = spark.sql(
       """
         |select CleanFusion(zh_name) as clean_zh_name,CleanFusion(org_name) as clean_org_name,*  from temp_origin
+        | where zh_name is not null and org_name is not null
         |""".stripMargin)
     person_origin.createOrReplaceTempView("person_origin")
    // 目标表
@@ -52,11 +52,11 @@ object PersonFusionUtil {
     rel_person.createOrReplaceTempView("rel_person")
 
     // 一对一 （原始的一个人对应 目标表中的一个人）
-    val rel_person_one = spark.sql("select * from rel_person where originID in (select originID from rel_person group by originID having count(originID)<2)")
+    val rel_person_one = spark.sql("select originID,targetID from rel_person where originID in (select originID from rel_person group by originID having count(originID)<2)")
     // 一对多 （原始的一个人对应 目标表中的多个人）
-    val rel_person_more = spark.sql("select * from rel_person where originID in (select originID from rel_person group by originID having count(originID)>1)")
+    val rel_person_more = spark.sql("select originID,targetID from rel_person where originID in (select originID from rel_person group by originID having count(originID)>1)")
     // 未融合的人（原始表 中的人 在目标表中找不到对应关系）
-    val person_not_exists = spark.sql(s"select * from  person_origin a  where not exists (select * from rel_person b where a.${originID}=b.originID)")
+    val person_not_exists = spark.sql(s"select * from  temp_origin a  where not exists (select * from rel_person b where a.${originID}=b.originID)")
         .drop("clean_zh_name","clean_org_name")
 
     (rel_person_one,rel_person_more,person_not_exists)

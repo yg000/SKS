@@ -4,7 +4,6 @@ import cn.sks.util.{BuildOrgIDUtil, DefineUDF}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object FusionProject {
-
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .master("local[12]")
@@ -26,7 +25,8 @@ object FusionProject {
       }
     })
 
-
+    // 项目融合（人工excel中的项目：wd_manual_excel_project  以及 奖励中的项目：wd_manual_excel_reward_project ）
+    // 1、人工excel 项目
     val manual_project = spark.sql(
         """
           |select id,
@@ -42,12 +42,13 @@ object FusionProject {
         """.stripMargin)
     manual_project.createOrReplaceTempView("manual_project")
 
+    // 基金委项目
     val project_nsfc = spark.sql("select * from dwd.wd_project_nsfc")
     project_nsfc.createOrReplaceTempView("project_nsfc")
     val origin_project = spark.sql("select project_id,zh_title,CleanFusion(zh_title) as clean_zh_title from project_nsfc")
     origin_project.createOrReplaceTempView("origin_project")
 
-
+    // 项目交集（对应关系）
     val rel_person_project= spark.sql(
       """
         | select * from (
@@ -57,9 +58,12 @@ object FusionProject {
         |    )a  group by id,project_id
       """.stripMargin)
     rel_person_project.createOrReplaceTempView("rel_person_project")
+    // excel 项目不存在于基金委中的项目
     val person_project_not_exists = spark.sql("select md5(clean_zh_title) as project_id,* from manual_project a  where not exists (select * from rel_person_project b where a.id=b.id)")
         .drop("clean_zh_title").dropDuplicates("project_id")
     person_project_not_exists.createOrReplaceTempView("person_project_not_exists")
+
+    // 给不能融合的项目 添加 person_id （关联项目中的人员融合表）
     val person_project_not_exists_replace_person_id = spark.sql(
       """
         |select if(person_id is null ,a.id,person_id) as person_id,a.*
@@ -68,12 +72,13 @@ object FusionProject {
         |  on a.id =b.id
       """.stripMargin).drop("id")
 
-
+    // 合并 基金委项目，与不能融合的项目
     val project_temp = completionFields(spark,person_project_not_exists_replace_person_id,project_nsfc).union(project_nsfc)
     project_temp.createOrReplaceTempView("project_temp")
     spark.sql("select *,CleanFusion(zh_title) as clean_zh_title from project_temp").createOrReplaceTempView("origin_project_temp")
 
 
+    // 2、融合来源于奖励中的项目  （来源于 wd_manual_excel_reward_project）
     val manual_reward_project = spark.sql(
       """
         |select
@@ -86,6 +91,7 @@ object FusionProject {
         |from dwd.wd_manual_excel_reward_project
       """.stripMargin)
     manual_reward_project.createOrReplaceTempView("manual_reward_project")
+    // 以 origin_project_temp 为基准，根据zh_title 融合奖励中的项目
     val rel_reward_project= spark.sql(
       """
         | select * from (
@@ -98,9 +104,10 @@ object FusionProject {
 
     val reward_project_not_exists = spark.sql("select md5(clean_zh_title) as project_id,id as person_id,* from manual_reward_project a  where not exists (select * from rel_reward_project b where a.id=b.id)")
       .drop("id").drop("clean_zh_title").dropDuplicates("project_id")
+
     val wb_project = completionFields(spark,reward_project_not_exists,project_nsfc).union(project_temp)
 
-
+    // 项目对应关系
     rel_person_project.union(rel_reward_project).toDF("id","project_id_nsfc").createOrReplaceTempView("wb_manual_excel_project_nsfc_rel")
 
     val wb_project_reward = spark.sql(
@@ -119,7 +126,6 @@ object FusionProject {
         |select
         | if(b.project_id_nsfc is null,md5(CleanFusion(project_name)),project_id_nsfc) as project_id,
         | md5(special_name) as special_project_id
-        |
         | from dwd.wd_manual_excel_project a
         | left join wb_manual_excel_project_nsfc_rel b
         | on a.id=b.id
@@ -172,11 +178,10 @@ object FusionProject {
 
   }
 
+   // 根据目标表自动校准 schema ，缺少字段，自动补空
   def completionFields(spark:SparkSession,originDF:DataFrame,targetTable:DataFrame):DataFrame = {
     var origin =originDF
-
     val origin_list = origin.schema.fieldNames.toList
-
     val target_list: List[String] = targetTable.schema.fieldNames.toList
 
     val diff_list = target_list diff origin_list

@@ -3,7 +3,7 @@ package cn.sks.dwb.manual
 import cn.sks.util.{BuildOrgIDUtil, DefineUDF}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object FusionProject {
+object FusionProjectExcel {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .master("local[12]")
@@ -32,8 +32,8 @@ object FusionProject {
           |select id,
           |project_name as zh_title,
           |project_no as prj_no ,
-          |project_person as psn_name,
-          |person_organization as org_name,
+          |zh_name as psn_name,
+          |org_name,
           |project_year as approval_year,
           |CleanDate(start_date) as start_date,
           |CleanDate(end_date) as end_date,
@@ -68,7 +68,7 @@ object FusionProject {
       """
         |select if(person_id is null ,a.id,person_id) as person_id,a.*
         | from  person_project_not_exists a
-        |  left join dwb.wb_person_manual_excel_project_person_rel_one b
+        |  left join dwb.wb_person_excel_project_person_rel_one b
         |  on a.id =b.id
       """.stripMargin).drop("id")
 
@@ -85,7 +85,7 @@ object FusionProject {
         |id,
         |project_name as zh_title,
         |project_no as prj_no,
-        |psn_name,
+        |zh_name as psn_name,
         |org_name,
         |CleanFusion(project_name) as clean_zh_title
         |from dwd.wd_manual_excel_reward_project
@@ -108,7 +108,7 @@ object FusionProject {
     val wb_project = completionFields(spark,reward_project_not_exists,project_nsfc).union(project_temp)
 
     // 项目对应关系
-    rel_person_project.union(rel_reward_project).toDF("id","project_id_nsfc").createOrReplaceTempView("wb_manual_excel_project_nsfc_rel")
+    rel_person_project.union(rel_reward_project).toDF("id","project_id_nsfc").createOrReplaceTempView("wb_project_excel_nsfc_rel")
 
     val wb_project_reward = spark.sql(
       """
@@ -117,7 +117,7 @@ object FusionProject {
         | md5(zh_title) as reward_id ,
         | publish_date ,session,reward_level,include_award,reward_rank
         |from dwd.wd_manual_excel_reward_project a
-        |left join wb_manual_excel_project_nsfc_rel b
+        |left join wb_project_excel_nsfc_rel b
         |on a.id=b.id
       """.stripMargin)
 
@@ -127,7 +127,7 @@ object FusionProject {
         | if(b.project_id_nsfc is null,md5(CleanFusion(project_name)),project_id_nsfc) as project_id,
         | md5(special_name) as special_project_id
         | from dwd.wd_manual_excel_project a
-        | left join wb_manual_excel_project_nsfc_rel b
+        | left join wb_project_excel_nsfc_rel b
         | on a.id=b.id
       """.stripMargin)
 
@@ -140,10 +140,14 @@ object FusionProject {
       """.stripMargin)
 
     val project_org_lead= BuildOrgIDUtil.buildOrganizationID(spark,wb_project,"org_name","dwb.wb_organization_project")
-      .select("project_id","org_id").show()
+      .select("project_id","org_id")
 
     val project_org_participation= BuildOrgIDUtil.buildOrganizationID(spark,project_person_participation,"org_name","dwb.wb_organization_project")
-      .select("project_id","org_id").show()
+      .select("project_id","org_id")
+
+
+    project_org_lead.createOrReplaceTempView("project_org_lead")
+    project_org_participation.createOrReplaceTempView("project_org_participation")
 
     wb_project.createOrReplaceTempView("wb_project")
     project_person_participation.createOrReplaceTempView("project_person_participation")
@@ -151,11 +155,11 @@ object FusionProject {
     wb_project_special_project.createOrReplaceTempView("wb_project_special_project")
 
 
+//    spark.sql("insert into table dwb.wb_project_organization_lead select * from project_org_lead where org_id is not null ")
+//    spark.sql("insert into table dwb.wb_project_organization_participation select * from project_org_participation  where org_id is not null")
 
 
-
-
-//    spark.sql("insert into table dwb.wb_manual_excel_project_nsfc_rel select * from wb_manual_excel_project_nsfc_rel")
+//    spark.sql("insert into table dwb.wb_project_excel_nsfc_rel select * from wb_project_excel_nsfc_rel")
 //
 //    spark.sql("insert into table dwb.wb_project select * from wb_project")
 //    spark.sql("insert into table dwb.wb_project_reward select * from wb_project_reward")
@@ -164,14 +168,6 @@ object FusionProject {
 //
 //    spark.sql("insert into table dwb.wb_project_person_lead            select project_id,person_id from wb_project")
 //    spark.sql("insert into table dwb.wb_project_person_participation   select  project_id,person_id from project_person_participation")
-
-
-
-
-
-
-
-
 
 
 

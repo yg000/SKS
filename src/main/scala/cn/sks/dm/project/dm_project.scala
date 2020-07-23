@@ -11,8 +11,6 @@ object dm_project {
       .enableHiveSupport()
       .getOrCreate()
 
-
-
     spark.sql("insert into table dm.dm_neo4j_project_product_conference  select * from dwb.wb_project_product  a" +
       " where exists (select * from dm.dm_neo4j_product_conference b where a.achievement_id=b.id)            ")
 

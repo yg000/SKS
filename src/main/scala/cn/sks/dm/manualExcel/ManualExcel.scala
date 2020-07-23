@@ -12,9 +12,6 @@ object ManualExcel {
       .enableHiveSupport()
       .getOrCreate()
 
-
-
-
     spark.sql("insert into table dm.dm_neo4j_excel_team                     select * from dwb.wb_excel_team                  ")
     spark.sql("insert into table dm.dm_neo4j_excel_reward                   select * from dwb.wb_excel_reward                ")
     spark.sql("insert into table dm.dm_neo4j_excel_team_reward              select * from dwb.wb_excel_team_reward           ")
@@ -26,10 +23,6 @@ object ManualExcel {
     spark.sql("insert into table dm.dm_neo4j_excel_guide                    select * from dwb.wb_excel_guide                 ")
     spark.sql("insert into table dm.dm_neo4j_excel_guide_special_project    select * from dwb.wb_excel_guide_special_project ")
     spark.sql("insert into table dm.dm_neo4j_excel_person_guide             select * from dwb.wb_excel_person_guide          ")
-
-
-
-
 
 
   }

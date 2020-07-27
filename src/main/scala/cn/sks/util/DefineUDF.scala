@@ -1,6 +1,9 @@
 package cn.sks.util
 
 import java.util.regex.{Matcher, Pattern}
+
+import cn.sks.BaiduTranslate.baidu.TransApi
+import com.google.gson.{JsonObject, JsonParser}
 object DefineUDF {
 
   // 判断是否包含中文
@@ -28,6 +31,33 @@ object DefineUDF {
     str.matches("[\u4e00-\u9fa5]")
   }
 
+  def translate(str:String,tolanguage:String): String = {
+
+    val APP_ID = "20200608000489509"
+    val SECURITY_KEY = "W0Aid0W8krDd0z79vn1_"
+
+    val api = new TransApi(APP_ID, SECURITY_KEY)
+
+    //        String query = "hello world";
+
+    var str1 = api.getTransResult(str, "zh", tolanguage) //中文翻译英文
+
+    //        System.out.println(str);    //输出结果，即json字段
+    var jsonObj = new JsonParser().parse(str1).asInstanceOf[JsonObject]
+    //解析json字段
+    try {
+      val res = jsonObj.get("trans_result").toString
+      //获取json字段中的 result字段，因为result字段本身即是一个json数组字段，所以要进一步解析
+      val js = new JsonParser().parse(res).getAsJsonArray //解析json数组字段
+      jsonObj = js.get(0).asInstanceOf[JsonObject] //result数组中只有一个元素，所以直接取第一个元素
+
+      val relust = jsonObj.get("dst").getAsString //得到dst字段，即译文，并输出
+
+      relust
+    }catch {
+      case ex:NullPointerException=>"null"
+    }
+  }
   // 清洗 成果中 title 以及authors 中的 标签符号
   def clean_div(data:String): String ={
       if(data== null && data!="") null

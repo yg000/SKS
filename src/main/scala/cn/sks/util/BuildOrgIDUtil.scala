@@ -5,7 +5,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object BuildOrgIDUtil {
   /* 生成对应单位org_id
      参数：
-            spark
+            spark    ：SparkSession
             oldDf    :原始表
             org_name :组织名字对应列
             source   :wb_organization_add表flag列对应值

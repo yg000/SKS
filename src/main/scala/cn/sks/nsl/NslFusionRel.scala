@@ -101,7 +101,7 @@ object NslFusionRel {
     spark.sql(
       """
         |select b.psn_code,a.children_id,a.name,a.org_name,a.children_year from person_student_not_exists a
-        |left join dwb.wb_person_exists_student b on a.name=b.zh_name and a.org_name=b.org_name
+        |left join dwb.wb_person_exists_student b on a.name=b.zh_name and a.org_name=b.org_name where b.psn_code is not null
       """.stripMargin).createOrReplaceTempView("psn_code_student")
 
     spark.sql("select * from psn_code_student where psn_code='760504'").show()
@@ -206,7 +206,7 @@ object NslFusionRel {
     spark.sql(
       """
         |select b.psn_code,a.children_id,a.name,a.org_name,a.year from person_teacher_not_exists a
-        |left join dwb.wb_person_exists_advisor b on a.name=b.zh_name and a.org_name=b.org_name
+        |left join dwb.wb_person_exists_advisor b on a.name=b.zh_name and a.org_name=b.org_name where b.psn_code is not null
       """.stripMargin).createOrReplaceTempView("psn_code_advisor")
 
     val person_nsl=spark.sql(

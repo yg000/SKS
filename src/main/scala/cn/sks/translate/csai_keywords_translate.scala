@@ -26,30 +26,29 @@ object csai_keywords_translate {
       .getOrCreate()
     import spark.implicits._
 //
-//    val csv= spark.read.csv("src/main/resources/csai_keywords_concat50.csv")
-//
-//    csv.toDF("key").createOrReplaceTempView("translate")
-//
-//    spark.sql(
-//
-//      """
-//        |select
-//        |split(key,"¤")[0] as keywords_id,
-//        |split(key,"¤")[1] as zh_keywords,
-//        |split(key,"¤")[2] as en_keywords,
-//        |'csai' as source
-//        |
-//        | from translate
-//        |""".stripMargin).createOrReplaceTempView("translated")
-//    spark.sql("insert overwrite table nsfc.o_csai_keyword_translate_4 select * from translated ")
-//
-//    spark.sql("select count(*) from translated where size(split(en_keywords,';')) >50 or size(split(en_keywords,';')) <50 ").show()
-//
-//    while(true){}
+    val csv= spark.read.csv("src/main/resources/csai_keywords_final_01.csv")
+
+    csv.toDF("key").createOrReplaceTempView("translate")
+
+    spark.sql(
+      """
+        |select
+        |split(key,"¤")[0] as keywords_id,
+        |split(key,"¤")[1] as zh_keywords,
+        |split(key,"¤")[2] as en_keywords,
+        |'csai' as source
+        | from translate
+        |""".stripMargin).createOrReplaceTempView("translated")
+    spark.sql("insert into table nsfc.o_csai_keyword_translate_final select * from translated  ")
+
+//    spark.sql("select sum(size(split(zh_keywords,';'))) from translated where size(split(en_keywords,';')) <10 or size(split(en_keywords,';')) >10 ").show()
+    spark.sql("select * from translated where en_keywords ='null' ").show()
+    println("=================================")
+    while(true){}
 //
 //    spark.sql("insert overwrite table nsfc.o_csai_keyword_not_translate " +
-//      "select * from nsfc.o_csai_keywords_concat_2 a where not exists " +
-//      "(select * from translated b where a.rank=b.keywords_id)")
+//      "select * from nsfc.o_csai_keywords_concat_50_20 a where not exists " +
+//      "(select * from translated b where a.keywords_id=b.keywords_id)")
 
     println("================start translate==================")
     import java.sql.DriverManager
@@ -63,7 +62,7 @@ object csai_keywords_translate {
     val jdbcUrl="jdbc:hive2://10.0.82.132:10000/nsfc"
     val hiveUser="root"
     val hivePassword="123456"
-    val sql="select * from nsfc.o_csai_keyword_translate_4 where size(split(en_keywords,';')) >50 or size(split(en_keywords,';')) <50 "
+    val sql="select * from nsfc.o_csai_keyword_translate_final where en_keywords ='null'"
 
     val con=DriverManager.getConnection(jdbcUrl,hiveUser,hivePassword)
     val ptsm=con.prepareStatement(sql)
@@ -71,7 +70,7 @@ object csai_keywords_translate {
 
     val bw:BufferedWriter=new BufferedWriter(
       new OutputStreamWriter(
-        new FileOutputStream("src/main/resources/csai_keywords_concat50_2.csv",true)))
+        new FileOutputStream("src/main/resources/csai_keywords_final_01.csv",true)))
 
     val list=new util.ArrayList[String]()
 

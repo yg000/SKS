@@ -41,13 +41,13 @@ object project_person_keywords_concat {
 
 //    while(true){}
 
-    val value: RDD[String] = rdd.map(s => {
+    val value: RDD[String] = rdd.map((s => {
 
       val key = s.getAs[String]("zh_keywords").replace(";", "")
       val rank=s.getAs[Int]("rank")
 
       key + ";" + rank / 50
-    })
+    }))
 
 
     value.toDF("key").createOrReplaceTempView("o_csai_split_10")

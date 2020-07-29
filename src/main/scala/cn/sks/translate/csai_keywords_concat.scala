@@ -32,24 +32,27 @@ object csai_keywords_concat {
 //        |select zh_keywords,row_number() over (order by keywords_id ) rank from nsfc.csai_keywords_split_1 where en_keywords is null
 //      """.stripMargin).rdd
 
+    spark.sql(
+      """
+        |select keyword_id,explode(split(zh_keyword,';')) as zh_keywords from nsfc.o_csai_keyword_translate_6
+        | where size(split(en_keywords,';')) <10 or size(split(en_keywords,';'))>10
+      """.stripMargin).createOrReplaceTempView("zh_keywords_20_split")
 
-//    spark.sql(
-//      """
-//        |select keyword_id,explode(split(zh_keyword,';')) as zh_keywords from nsfc.o_csai_keyword_translate_4 where size(split(en_keywords,';')) <10
-//      """.stripMargin).createOrReplaceTempView("zh_keywords_20_split")
-//
-//    spark.sql(
-//      """
-//        |select zh_keywords,md5(zh_keywords) as keywords_id from zh_keywords_20_split
-//          """.stripMargin).createOrReplaceTempView("zh_keywords_20_split_rank")
-
-//    spark.sql("insert into table nsfc.o_csai_keywords_concat_01 select keywords_id,zh_keywords from zh_keywords_20_split_rank")
-//
+    spark.sql("select count(*) from zh_keywords_20_split").show()  //76385
 //    while(true){}
+
+    spark.sql(
+      """
+        |select zh_keywords,md5(zh_keywords) as rank from zh_keywords_20_split
+          """.stripMargin).createOrReplaceTempView("zh_keywords_20_split_rank")
+
+    spark.sql("insert overwrite table nsfc.o_csai_keywords_concat_01 select rank,zh_keywords from zh_keywords_20_split_rank")
+    println("==========================")
+    while(true){}
 
     val rdd=spark.sql(
       """
-        |select zh_keywords,row_number() over (order by rank) rank from nsfc.o_csai_keywords_non_translate
+        |select zh_keywords,row_number() over (order by rank) rank from zh_keywords_20_split_rank
       """.stripMargin).rdd
 
 //    while(true){}
@@ -59,7 +62,7 @@ object csai_keywords_concat {
       val key = s.getAs[String]("zh_keywords").replace(";", "")
       val rank=s.getAs[Int]("rank")
 
-      key + ";" + rank / 50
+      key + ";" + rank / 10
     }))
 
 
@@ -83,7 +86,7 @@ object csai_keywords_concat {
       """.stripMargin).createOrReplaceTempView("keywords_collect")
 
 
-   spark.sql("insert overwrite table nsfc.o_csai_keywords_concat_50 select md5(rank) as rank,keywords from  keywords_collect")
+   spark.sql("insert overwrite table nsfc.o_csai_keywords_concat_50_10 select md5(rank) as rank,keywords from  keywords_collect")
 
     println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date))
   }

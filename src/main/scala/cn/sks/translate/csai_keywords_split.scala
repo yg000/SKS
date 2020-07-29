@@ -28,7 +28,7 @@ object csai_keywords_split {
 
     val sql = spark.sql(
       """
-        |select keyword_id,explode(zh_keyword) as zh_keyword from nsfc.o_csai_keyword_translate_4 where size(split(en_keywords,';')) <50
+        |select * from nsfc.o_csai_keyword_translate_8
       """.stripMargin)
 
     val rdd: RDD[Row] = sql.toDF().rdd
@@ -37,9 +37,9 @@ object csai_keywords_split {
     val value: RDD[String] = rdd.map(s => {
       var row = ""
 
-      val id: String = s.getAs[String]("keyword_id")
+      val id: String = s.getAs[String]("keywords_id")
 
-      var zh_keywords: String = s.getAs[String]("zh_keyword").replaceAll("☼","").replaceAll("☿","☿")
+      var zh_keywords: String = s.getAs[String]("zh_keywords").replaceAll("☼","").replaceAll("☿","☿")
       var en_keywords: String = s.getAs[String]("en_keywords").replaceAll("☼","").replaceAll("☿","☿")
       var source: String = s.getAs[String]("source")
 
@@ -84,30 +84,30 @@ object csai_keywords_split {
 
         }
         //unequal
-        if (en_keywords != "" && zh_keywords != "" && zh_split.size != en_split.size) {
-
-          if (zh_split.size > en_split.size) {
-              for (i <- 0 until en_split.size) {
-                row += id
-                row += "☼"
-                row += zh_split(i)
-                row += "☿"
-                row += en_split(i)
-                row += "☼"
-                row += source
-                row += "¤"
-                if (i == en_split.size - 1) {
-                  row += id
-                  row += "☼"
-                  row += zh_split(i)
-                  row += "☿"
-                  row += en_split(i)
-                  row += "☼"
-                  row += source
-                }
-              }
-          }
-        }
+//        if (en_keywords != "" && zh_keywords != "" && zh_split.size != en_split.size) {
+//
+//          if (zh_split.size > en_split.size) {
+//              for (i <- 0 until en_split.size) {
+//                row += id
+//                row += "☼"
+//                row += zh_split(i)
+//                row += "☿"
+//                row += en_split(i)
+//                row += "☼"
+//                row += source
+//                row += "¤"
+//                if (i == en_split.size - 1) {
+//                  row += id
+//                  row += "☼"
+//                  row += zh_split(i)
+//                  row += "☿"
+//                  row += en_split(i)
+//                  row += "☼"
+//                  row += source
+//                }
+//              }
+//          }
+//        }
 
       } catch {
         case ex: NullPointerException => "sss"
@@ -148,9 +148,8 @@ object csai_keywords_split {
 
     spark.sql(
       """
-        |insert overwrite table nsfc.csai_keywords_split_2
-        |select a.keyword_id,a.keyword,b.en_keywords,b.source from ods.o_csai_keyword a
-        | left join o_csai_keyword_split b on b.zh_keywords=a.keyword
+        |insert overwrite table nsfc.o_csai_keyword_translate_9_split
+        |select * from o_csai_keyword_split union select * from nsfc.o_csai_keyword_translate_7
         |""".stripMargin)
 
 

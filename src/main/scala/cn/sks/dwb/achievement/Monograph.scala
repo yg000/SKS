@@ -90,7 +90,9 @@ object Monograph {
 
 // csai_nsfc_ms
 
-    val fushion_data_csai_nsfc = AchievementUtil.explodeAuthors(spark,product_nsfc_person,"author")
+    val product_csai_nsfc = spark.read.table("dwb.wb_product_monograph_csai_nsfc")
+
+    val fushion_data_csai_nsfc = AchievementUtil.explodeAuthors(spark,product_csai_nsfc,"author")
 
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_csai_nsfc, "person_name")
       .createOrReplaceTempView("fushion_data_csai_nsfc_pinyin")
@@ -108,8 +110,7 @@ object Monograph {
 
     AchievementUtil.getSource(spark,"wb_product_monograph_csai_nsfc_ms_rel").createOrReplaceTempView("get_source")
 
-    val product_monograph_csai_nsfc = spark.read.table("dwb.wb_product_monograph_csai_nsfc")
-    product_monograph_csai_nsfc.union(product_ms).createOrReplaceTempView("o_product_monograph")
+    product_csai_nsfc.union(product_ms).createOrReplaceTempView("o_product_monograph")
 
 
     spark.sql(

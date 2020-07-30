@@ -20,7 +20,7 @@ object Criterion {
       .appName("Criterion")
       .enableHiveSupport()
       .getOrCreate()
-    spark.sparkContext.setLogLevel("warn")
+    //spark.sparkContext.setLogLevel("warn")
 
 
     spark.udf.register("clean_div", DefineUDF.clean_div _)

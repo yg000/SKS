@@ -33,16 +33,16 @@ object PaperJournal {
     spark.udf.register("clean_fusion", DefineUDF.clean_fusion _)
 
     //项目产出成果===================
-    val product_csai = spark.read.table("dwd.wd_product_journal_csai").limit(1000)
-    val product_nsfc_person = spark.read.table("dwd.wd_product_journal_nsfc").limit(1000)
-    val product_nsfc_project = spark.read.table("dwd.wd_product_journal_project_nsfc").limit(1000)
-    val product_nsfc_npd = spark.read.table("dwd.wd_product_journal_npd_nsfc").limit(1000)
-    val product_ms = spark.read.table("dwd.wd_product_journal_ms").limit(1000)
-    val product_orcid = spark.read.table("dwd.wd_product_journal_orcid ").limit(1000)
+    val product_csai = spark.read.table("dwd.wd_product_journal_csai")
+    val product_nsfc_person = spark.read.table("dwd.wd_product_journal_nsfc")
+    val product_nsfc_project = spark.read.table("dwd.wd_product_journal_project_nsfc")
+    val product_nsfc_npd = spark.read.table("dwd.wd_product_journal_npd_nsfc")
+    val product_ms = spark.read.table("dwd.wd_product_journal_ms")
+    val product_orcid = spark.read.table("dwd.wd_product_journal_orcid ")
     //将基金委对应的论文成果对应的作者和论文的字段合并到一块儿
 
 
-    val product_nsfc = product_nsfc_person.union(product_nsfc_project).union(product_nsfc_npd).dropDuplicates("achievement_id")
+    val product_nsfc = product_nsfc_person.unionAll(product_nsfc_project).unionAll(product_nsfc_npd).dropDuplicates("achievement_id")
 
     val fusion_data_nsfc = AchievementUtil.explodeAuthors(spark, product_nsfc, "authors")
     val fushion_data_csai = AchievementUtil.explodeAuthors(spark, product_csai, "authors")
@@ -57,7 +57,7 @@ object PaperJournal {
 
     AchievementUtil.getSource(spark, "wb_product_journal_csai_nsfc_rel").createOrReplaceTempView("get_source")
 
-    product_nsfc.union(product_csai).createOrReplaceTempView("o_product_journal_csai_nsfc")
+    product_nsfc.unionAll(product_csai).createOrReplaceTempView("o_product_journal_csai_nsfc")
 
 
     spark.sql(
@@ -139,7 +139,7 @@ object PaperJournal {
     AchievementUtil.getSource(spark, "wb_product_journal_csai_nsfc_ms_rel").createOrReplaceTempView("get_source")
 
 
-    product_csai_nsfc.union(product_ms).createOrReplaceTempView("o_product_journal")
+    product_csai_nsfc.unionAll(product_ms).createOrReplaceTempView("o_product_journal")
 
     spark.sql(
       """
@@ -221,7 +221,7 @@ object PaperJournal {
     AchievementUtil.getSource(spark, "wb_product_journal_csai_nsfc_ms_orcid_rel").createOrReplaceTempView("get_source")
 
 
-    product_csai_nsfc_ms.union(product_orcid).createOrReplaceTempView("o_product_journal")
+    product_csai_nsfc_ms.unionAll(product_orcid).createOrReplaceTempView("o_product_journal")
 
     spark.sql(
       """

@@ -19,13 +19,6 @@ object BuildOrgIDUtil {
     })
     val newTb = "dwb.wb_organization_add"
 
-
-
-    spark.sql(
-      s"""
-         |create table if not exists ${newTb} like dwb.wb_organization
-         |""".stripMargin)
-
     spark.sql(
       s"""
         |select * from ${newTb}
@@ -102,11 +95,9 @@ object BuildOrgIDUtil {
     })
     val newTb = "dwb.wb_organization_add"
 
-
-
     spark.sql(
       s"""
-         |create table if not exists ${newTb} like dwb.wb_organization
+         |alter table $newTb drop partition (flag='$source')
          |""".stripMargin)
 
     spark.sql(
@@ -140,10 +131,7 @@ object BuildOrgIDUtil {
     spark.sql( s"""
                   |select * from (select *,row_number()over(partition by clean_fusion(org_name) order by org_name desc) as tid from org_product_lack) a where tid =1
                   |""".stripMargin).createOrReplaceTempView("org_product_lack")
-    spark.sql(
-      s"""
-         |alter table $newTb drop partition (flag='$source')
-         |""".stripMargin)
+
     spark.sql(
       s"""
          |insert into table $newTb partition(flag = '$source')

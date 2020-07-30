@@ -24,12 +24,10 @@ object org_dwd {
     val api = new TransApi(APP_ID, SECURITY_KEY)
 
     val query = str
-    val jsonString = api.getTransResult(query, "auto", "en")
+    val jsonString = api.getTransResult(query, "zh", "en")
     val json = new JSONObject(jsonString.toString)
     val json0 = new JSONObject(json.get("trans_result").toString.replace("[", "").replace("]", ""))
-    System.out.println(json.get("trans_result"))
-    System.out.println(json0.get("dst"))
-    System.out.println(api.getTransResult(query, "auto", "en"))
+    System.out.println(jsonString)
     json0.get("dst").toString
 
   })
@@ -42,9 +40,7 @@ object org_dwd {
     val jsonString = api.getTransResult(query, "en", "zh")
     val json = new JSONObject(jsonString.toString)
     val json0 = new JSONObject(json.get("trans_result").toString.replace("[", "").replace("]", ""))
-    System.out.println("  ddddddd  "+json.get("trans_result"))
-    System.out.println(json0.get("dst"))
-    System.out.println(api.getTransResult(query, "en", "zh"))
+    System.out.println(jsonString)
     json0.get("dst").toString
 
   })

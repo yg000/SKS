@@ -63,25 +63,24 @@ object PaperConference {
       """
         |select
         |a.achievement_id
-        |,"1" as paper_type
+        |,product_type
         |,chinese_title
         |,english_title
         |,doi
-        |,handle
+        |
         |,first_author
         |,first_author_id
         |,correspondent_author
         |,authors
         |,fund_project
         |,publish_date
-        |,null as article_no
-        |,keywords
-        |,includes
-        |,references
+        |,article_no
+        |,article_type
+        |,keyword
+        |,include
+        |,reference
         |,paper_rank
         |,language
-        |,volume
-        |,issue
         |,page_start
         |,page_end
         |,received_time
@@ -96,12 +95,14 @@ object PaperConference {
         |,fulltext_path
         |,abstract
         |,citation
-        |,field_id
-        |,field_name
-        |,field_sub_id
-        |,field_sub_name
         |,conference
-        |,conference_id
+        |,conference_type
+        |,conference_address
+        |,organization
+        |,start_date
+        |,end_date
+        |,country
+        |,city
         |,ifnull(b.source,flow_source) as flow_source
         |,a.source
         |from o_product_conference_ms_nsfc a left join get_source b on a.achievement_id = b.achievement_id
@@ -144,25 +145,23 @@ object PaperConference {
       """
         |select
         |a.achievement_id
-        |,"1" as paper_type
+        |,product_type
         |,chinese_title
         |,english_title
         |,doi
-        |,handle
         |,first_author
         |,first_author_id
         |,correspondent_author
         |,authors
         |,fund_project
         |,publish_date
-        |,null as article_no
-        |,keywords
-        |,includes
-        |,references
+        |,article_no
+        |,article_type
+        |,keyword
+        |,include
+        |,reference
         |,paper_rank
         |,language
-        |,volume
-        |,issue
         |,page_start
         |,page_end
         |,received_time
@@ -177,12 +176,14 @@ object PaperConference {
         |,fulltext_path
         |,abstract
         |,citation
-        |,field_id
-        |,field_name
-        |,field_sub_id
-        |,field_sub_name
         |,conference
-        |,conference_id
+        |,conference_type
+        |,conference_address
+        |,organization
+        |,start_date
+        |,end_date
+        |,country
+        |,city
         |,ifnull(b.source,flow_source) as flow_source
         |,a.source
         |from o_product_conference a left join get_source b on a.achievement_id = b.achievement_id

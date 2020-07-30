@@ -202,8 +202,6 @@ object PaperConference {
         |,clean_div(zh_title) as chinese_title
         |,clean_div(en_title) as english_title
         |,if(doi=="",null,doi) as doi
-
-        |
         |,null as first_author
         |,psn_code as first_author_id
         |,null as correspondent_author

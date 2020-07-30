@@ -66,14 +66,51 @@ object org_dm {
 //                |source
 //                | from dwb.wb_organization
 //                |""".stripMargin)
-//
-//    spark.sql("""
-//                |insert overwrite table dm.dm_neo4j_person_organization
-//                |select
-//                |person_id,
-//                |organization_id
-//                |from dwb.wb_organization_person where organization_id is not null
-//                |""".stripMargin)
+
+
+    //relationship person_organization
+    spark.sql("""
+                |insert overwrite table dm.dm_neo4j_person_organization
+                |select
+                |person_id,
+                |organization_id
+                |from dwb.wb_organization_person where organization_id is not null
+                |""".stripMargin)
+
+    //relationship person_organization
+
+    spark.sql(
+      """
+        |insert overwrite table dm.dm_neo4j_prouduct_org_criterion
+        |select
+        |achievement_id,
+        |org_id
+        |from dwb.wb_product_organization where type = 'criterion'
+        |""".stripMargin)
+    spark.sql(
+      """
+        |insert overwrite table dm.dm_neo4j_prouduct_org_journal
+        |select
+        |achievement_id,
+        |org_id
+        |from dwb.wb_product_organization where type = 'journal'
+        |""".stripMargin)
+    spark.sql(
+      """
+        |insert overwrite table dm.dm_neo4j_prouduct_org_monograph
+        |select
+        |achievement_id,
+        |org_id
+        |from dwb.wb_product_organization where type = 'monograph'
+        |""".stripMargin)
+    spark.sql(
+      """
+        |insert overwrite table dm.dm_neo4j_prouduct_org_patent
+        |select
+        |achievement_id,
+        |org_id
+        |from dwb.wb_product_organization where type = 'patent'
+        |""".stripMargin)
 
   }
 }

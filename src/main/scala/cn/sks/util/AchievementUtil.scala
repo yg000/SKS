@@ -5,6 +5,17 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object AchievementUtil {
 
 
+  def getAuthors(spark:SparkSession,table_name:String,authers_tb:String,col_name:String):DataFrame={
+    spark.sql(
+      s"""
+        |select achievement_id,concat_ws(';',collect_set(person_name)) as authors from $authers_tb group by achievement_id
+        |""".stripMargin).createOrReplaceTempView("get_authors")
+
+    val get_table = spark.read.table(s"$table_name")
+    get_table.drop(col_name)
+
+  }
+
   def explodeAuthors(spark:SparkSession,oldDf:DataFrame,col_name:String):DataFrame={
 
     spark.sqlContext.udf.register("clean_fusion",(str:String) =>{
@@ -74,5 +85,6 @@ object AchievementUtil {
         |""".stripMargin)
 
   }
+
 
 }

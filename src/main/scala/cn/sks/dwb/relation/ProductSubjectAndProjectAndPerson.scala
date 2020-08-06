@@ -83,11 +83,11 @@ object ProductSubjectAndProjectAndPerson {
 
 
     //人和成果得关系
-    val csai_person = spark.sql("select person_id,achievement_id,product_type from dwd.wd_product_person_ext_csai where product_type!='8'")
+    val csai_person = spark.sql("select person_id,achievement_id,product_type from dwd.wd_product_person_ext_csai where product_type not in ('8','3')")
     val nsfc_person = spark.sql("select person_id,achievement_id ,product_type from dwd.wd_product_person_ext_nsfc")
     val orcid_person = spark.sql("select person_id,achievement_id ,product_type from dwd.wd_product_person_ext_orcid")
 
-    val person_productf_all = csai_person.union(nsfc_person).union(orcid_person)
+    val person_productf_all = csai_person.unionAll(nsfc_person).unionAll(orcid_person)
 
     person_productf_all.join(product_id, Seq("achievement_id"), "left")
       .createOrReplaceTempView("person")

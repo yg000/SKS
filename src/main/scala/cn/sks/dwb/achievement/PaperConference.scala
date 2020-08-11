@@ -12,7 +12,7 @@ object PaperConference {
   def main(args: Array[String]): Unit = {
 
     val spark: SparkSession = SparkSession.builder()
-      .master("local[15]")
+      .master("local[40]")
       .config("spark.deploy.mode", "clent")
       .config("executor-memory", "12g")
       .config("executor-cores", "6")
@@ -31,6 +31,7 @@ object PaperConference {
     spark.udf.register("clean_separator", DefineUDF.clean_separator _)
     //融合的函数
     spark.udf.register("clean_fusion", DefineUDF.clean_fusion _)
+    spark.udf.register("union_flow_source", DefineUDF.unionFlowSource _)
 
     //项目产出成果===================
     val product_nsfc_person = spark.read.table("dwd.wd_product_conference_nsfc")
@@ -52,7 +53,7 @@ object PaperConference {
     AchievementUtil.getComparisonTable(spark,"fushion_data_nsfc_pinyin","fushion_data_ms_pinyin")
       .createOrReplaceTempView("wb_product_conference_ms_nsfc_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_conference_ms_nsfc_rel  select * from wb_product_conference_ms_nsfc_rel")
+    spark.sql("insert overwrite table dwb.wb_product_conference_ms_nsfc_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_conference_ms_nsfc_rel")
 
     AchievementUtil.getSource(spark,"wb_product_conference_ms_nsfc_rel").createOrReplaceTempView("get_source")
 
@@ -67,7 +68,6 @@ object PaperConference {
         |,chinese_title
         |,english_title
         |,doi
-        |
         |,first_author
         |,first_author_id
         |,correspondent_author
@@ -103,7 +103,7 @@ object PaperConference {
         |,end_date
         |,country
         |,city
-        |,ifnull(b.source,flow_source) as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
         |,a.source
         |from o_product_conference_ms_nsfc a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_conference_ms_nsfc_get_source")
@@ -134,7 +134,7 @@ object PaperConference {
 
     AchievementUtil.getComparisonTable(spark,"fushion_data_ms_nsfc_pinyin","fushion_data_orcid_pinyin").createOrReplaceTempView("wb_product_conference_ms_nsfc_orcid_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_conference_ms_nsfc_orcid_rel  select * from wb_product_conference_ms_nsfc_orcid_rel")
+    spark.sql("insert overwrite table dwb.wb_product_conference_ms_nsfc_orcid_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_conference_ms_nsfc_orcid_rel")
 
     AchievementUtil.getSource(spark,"wb_product_conference_ms_nsfc_orcid_rel").createOrReplaceTempView("get_source")
 
@@ -184,7 +184,7 @@ object PaperConference {
         |,end_date
         |,country
         |,city
-        |,ifnull(b.source,flow_source) as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
         |,a.source
         |from o_product_conference a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_conference_ms_nsfc_orcid_get_source")

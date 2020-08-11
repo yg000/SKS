@@ -28,7 +28,7 @@ object Monograph {
     spark.udf.register("clean_separator", DefineUDF.clean_separator _)
     //融合的函数
     spark.udf.register("clean_fusion", DefineUDF.clean_fusion _)
-
+    spark.udf.register("union_flow_source", DefineUDF.unionFlowSource _)
 
     //数据处理过程中的代码===================
     val product_nsfc_person = spark.read.table("dwd.wd_product_monograph_nsfc")
@@ -50,7 +50,7 @@ object Monograph {
     AchievementUtil.getComparisonTable(spark,"fushion_data_nsfc_pinyin","fushion_data_csai_pinyin")
       .createOrReplaceTempView("wb_product_monograph_csai_nsfc_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_rel  select * from wb_product_monograph_csai_nsfc_rel")
+    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_monograph_csai_nsfc_rel")
 
     AchievementUtil.getSource(spark,"wb_product_monograph_csai_nsfc_rel").createOrReplaceTempView("get_source")
 
@@ -74,7 +74,7 @@ object Monograph {
         |,page_range
         |,word_count
         |,publisher
-        |,ifnull(b.source,flow_source) as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
         |,a.source
         |from o_product_monograph_csai_nsfc a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_monograph_csai_nsfc_get_source")
@@ -106,7 +106,7 @@ object Monograph {
 
     AchievementUtil.getComparisonTable(spark,"fushion_data_csai_nsfc_pinyin","fushion_data_ms_pinyin").createOrReplaceTempView("wb_product_monograph_csai_nsfc_ms_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_ms_rel  select * from wb_product_monograph_csai_nsfc_ms_rel")
+    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_ms_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_monograph_csai_nsfc_ms_rel")
 
     AchievementUtil.getSource(spark,"wb_product_monograph_csai_nsfc_ms_rel").createOrReplaceTempView("get_source")
 
@@ -131,7 +131,7 @@ object Monograph {
         |,page_range
         |,word_count
         |,publisher
-        |,ifnull(b.source,flow_source) as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
         |,a.source
         |from o_product_monograph a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_monograph_csai_nsfc_ms_get_source")

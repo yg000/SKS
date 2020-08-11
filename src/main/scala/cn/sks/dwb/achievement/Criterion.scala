@@ -27,6 +27,7 @@ object Criterion {
     spark.udf.register("clean_div", DefineUDF.clean_div _)
     spark.udf.register("clean_separator", DefineUDF.clean_separator _)
     spark.udf.register("clean_fusion", DefineUDF.clean_fusion _)
+    spark.udf.register("union_flow_source", DefineUDF.unionFlowSource _)
 
     val product_csai = spark.read.table("dwd.wd_product_criterion_csai")
     val product_nsfc_person = spark.read.table("dwd.wd_product_criterion_nsfc")
@@ -43,7 +44,7 @@ object Criterion {
 
     AchievementUtil.getComparisonTable(spark,"fushion_data_nsfc_pinyin","fushion_data_csai_pinyin").createOrReplaceTempView("wb_product_criterion_csai_nsfc_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_criterion_csai_nsfc_rel  select * from wb_product_criterion_csai_nsfc_rel")
+    spark.sql("insert overwrite table dwb.wb_product_criterion_csai_nsfc_rel  select achievement_id_to,achievement_id_from,product_type,source from wb_product_criterion_csai_nsfc_rel")
 
     AchievementUtil.getSource(spark,"wb_product_criterion_csai_nsfc_rel").createOrReplaceTempView("get_source")
 
@@ -69,7 +70,7 @@ object Criterion {
         |,publish_agency
         |,hasFullText
         |,fulltext_url
-        |,ifnull(b.source,flow_source) as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
         |,a.source
         |from o_product_criterion a left join get_source b on a.achievement_id = b.achievement_id
         |""".stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_criterion_get_source")

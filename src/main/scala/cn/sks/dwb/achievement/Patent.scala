@@ -1,5 +1,6 @@
 package cn.sks.dwb.achievement
 
+import cn.sks.jutil.H2dbUtil
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 import org.apache.spark.sql.{Column, SparkSession}
 
@@ -12,7 +13,7 @@ object Patent {
   def main(args: Array[String]): Unit = {
 
     val spark: SparkSession = SparkSession.builder()
-      //.master("local[40]")
+      .master("local[40]")
       .config("spark.deploy.mode", "clent")
       .config("executor-memory", "12g")
       .config("executor-cores", "6")
@@ -40,9 +41,14 @@ object Patent {
     //项目产出成果
     val product_nsfc_project = spark.read.table("dwd.wd_product_patent_project_nsfc")
     val product_nsfc_npd = spark.read.table("dwd.wd_product_patent_npd_nsfc")
-
     val product_ms =  spark.read.table("dwd.wd_product_patent_ms")
 
+    H2dbUtil.useH2("dwd.wd_product_patent_csai","dwb.wb_product_patent_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_patent_nsfc","dwb.wb_product_patent_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_patent_project_nsfc","dwb.wb_product_patent_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_patent_npd_nsfc","dwb.wb_product_patent_csai_nsfc")
+    H2dbUtil.useH2("dwb.wb_product_patent_csai_nsfc","dwb.wb_product_patent_csai_nsfc_ms")
+    H2dbUtil.useH2("dwd.wd_product_patent_ms","dwb.wb_product_patent_csai_nsfc_ms")
     //将基金委对应的论文成果对应的作者和论文的字段合并到一块儿
 
 
@@ -137,7 +143,7 @@ object Patent {
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_ms, "person_name")
       .createOrReplaceTempView("fushion_data_ms_pinyin")
 
-    AchievementUtil.getComparisonTable(spark,"fushion_data_csai_nsfc_pinyin","fushion_data_ms_pinyin").createOrReplaceTempView("wb_product_patent_csai_nsfc_ms_rel")
+    AchievementUtil.getComparisonTable(spark,"fushion_data_ms_pinyin","fushion_data_csai_nsfc_pinyin").createOrReplaceTempView("wb_product_patent_csai_nsfc_ms_rel")
 
     spark.sql("insert overwrite table dwb.wb_product_patent_csai_nsfc_ms_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_patent_csai_nsfc_ms_rel")
 

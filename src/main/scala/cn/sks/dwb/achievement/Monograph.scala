@@ -1,5 +1,6 @@
 package cn.sks.dwb.achievement
 
+import cn.sks.jutil.H2dbUtil
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 import org.apache.spark.sql.{Column, SparkSession}
 
@@ -37,6 +38,12 @@ object Monograph {
     val product_csai = spark.read.table("dwd.wd_product_monograph_csai")
     val product_ms = spark.read.table("dwd.wd_product_monograph_ms")
 
+    H2dbUtil.useH2("dwd.wd_product_monograph_nsfc","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_monograph_project_nsfc","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_monograph_npd_nsfc","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_monograph_csai","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwb.wb_product_monograph_csai_nsfc","dwb.wb_product_monograph_csai_nsfc_ms")
+    H2dbUtil.useH2("dwd.wd_product_monograph_ms","dwb.wb_product_monograph_csai_nsfc_ms")
     //将基金委对应的论文成果对应的作者和论文的字段合并到一块儿
     val product_nsfc = product_nsfc_person.union(product_nsfc_project).union(product_nsfc_npd).dropDuplicates("achievement_id")
 
@@ -104,7 +111,7 @@ object Monograph {
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_ms, "person_name")
       .createOrReplaceTempView("fushion_data_ms_pinyin")
 
-    AchievementUtil.getComparisonTable(spark,"fushion_data_csai_nsfc_pinyin","fushion_data_ms_pinyin").createOrReplaceTempView("wb_product_monograph_csai_nsfc_ms_rel")
+    AchievementUtil.getComparisonTable(spark,"fushion_data_ms_pinyin","fushion_data_csai_nsfc_pinyin").createOrReplaceTempView("wb_product_monograph_csai_nsfc_ms_rel")
 
     spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_ms_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_monograph_csai_nsfc_ms_rel")
 

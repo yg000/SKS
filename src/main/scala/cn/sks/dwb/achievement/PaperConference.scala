@@ -1,5 +1,6 @@
 package cn.sks.dwb.achievement
 
+import cn.sks.jutil.H2dbUtil
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 import org.apache.spark.sql.{Column, SparkSession}
 
@@ -39,6 +40,14 @@ object PaperConference {
     val product_nsfc_npd = spark.read.table("dwd.wd_product_conference_npd_nsfc")
     val product_ms =  spark.read.table("dwd.wd_product_conference_ms")
     val product_orcid =  spark.read.table("dwd.wd_product_conference_orcid ")
+
+    H2dbUtil.useH2("dwd.wd_product_conference_nsfc","dwb.wb_product_conference_ms_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_conference_project_nsfc","dwb.wb_product_conference_ms_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_conference_npd_nsfc","dwb.wb_product_conference_ms_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_conference_ms","dwb.wb_product_conference_ms_nsfc")
+    H2dbUtil.useH2("dwb.wb_product_conference_ms_nsfc","dwb.wb_product_conference_ms_nsfc_orcid")
+    H2dbUtil.useH2("dwd.wd_product_conference_orcid","dwb.wb_product_conference_ms_nsfc_orcid")
+
     //将基金委对应的论文成果对应的作者和论文的字段合并到一块儿
 
 
@@ -132,7 +141,7 @@ object PaperConference {
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_orcid, "person_name")
       .createOrReplaceTempView("fushion_data_orcid_pinyin")
 
-    AchievementUtil.getComparisonTable(spark,"fushion_data_ms_nsfc_pinyin","fushion_data_orcid_pinyin").createOrReplaceTempView("wb_product_conference_ms_nsfc_orcid_rel")
+    AchievementUtil.getComparisonTable(spark,"fushion_data_orcid_pinyin","fushion_data_ms_nsfc_pinyin").createOrReplaceTempView("wb_product_conference_ms_nsfc_orcid_rel")
 
     spark.sql("insert overwrite table dwb.wb_product_conference_ms_nsfc_orcid_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_conference_ms_nsfc_orcid_rel")
 

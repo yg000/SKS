@@ -1,7 +1,8 @@
 package cn.sks.dwd.achievement
 
+import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
-import cn.sks.util.{DefineUDF,NameToPinyinUtil}
+import cn.sks.util.{DefineUDF, NameToPinyinUtil}
 /*
 
 论文数据的整合的整体的代码
@@ -11,7 +12,7 @@ object Patent {
   def main(args: Array[String]): Unit = {
 
     val spark: SparkSession = SparkSession.builder()
-      .master("local[15]")
+      .master("local[40]")
       .config("spark.deploy.mode", "clent")
       .config("executor-memory", "12g")
       .config("executor-cores", "6")
@@ -76,9 +77,10 @@ object Patent {
         |,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_product_patent_nsfc\"","," ,"\"id\"",":","\"",achievement_id,"\"","}") as flow_source
         |,'nsfc' as source
         |from ods.o_nsfc_product_patent
-      """.stripMargin).repartition(5).createOrReplaceTempView("wd_product_patent_nsfc")
+      """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_patent_nsfc")
 
-    spark.sql("insert overwrite table dwd.wd_product_patent_nsfc  select * from wd_product_patent_nsfc")
+    //spark.sql("insert overwrite table dwd.wd_product_patent_nsfc  select * from wd_product_patent_nsfc")
+    H2dbUtil.useH2("ods.o_nsfc_product_patent","dwd.wd_product_patent_nsfc")
 
     //项目产出成果
     spark.sql(
@@ -126,10 +128,9 @@ object Patent {
         |,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_product_patent_project_nsfc\"","," ,"\"id\"",":","\"",achievement_id,"\"","}") as flow_source
         |,'nsfc' as source
         |from ods.o_nsfc_project_patent
-      """.stripMargin).repartition(5).createOrReplaceTempView("wd_product_patent_business_nsfc")
-
-    spark.sql("insert overwrite table dwd.wd_product_patent_project_nsfc  select * from wd_product_patent_business_nsfc")
-
+      """.stripMargin).repartition(20).createOrReplaceTempView("wd_product_patent_business_nsfc")
+    //spark.sql("insert overwrite table dwd.wd_product_patent_project_nsfc  select * from wd_product_patent_business_nsfc")
+    H2dbUtil.useH2("ods.o_nsfc_project_patent","dwd.wd_product_patent_project_nsfc")
 
     spark.sql(
       """
@@ -176,9 +177,9 @@ object Patent {
         |,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_product_patent_npd_nsfc\"","," ,"\"id\"",":","\"",achievement_id,"\"","}") as flow_source
         |,'nsfc' as source
         |from ods.o_nsfc_npd_patent
-      """.stripMargin).repartition(1).createOrReplaceTempView("wd_product_patent_npd_nsfc")
-    spark.sql("insert overwrite table dwd.wd_product_patent_npd_nsfc  select * from wd_product_patent_npd_nsfc")
-
+      """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_patent_npd_nsfc")
+    //spark.sql("insert overwrite table dwd.wd_product_patent_npd_nsfc  select * from wd_product_patent_npd_nsfc")
+    H2dbUtil.useH2("ods.o_nsfc_npd_patent","dwd.wd_product_patent_npd_nsfc")
 
 
 
@@ -234,10 +235,11 @@ object Patent {
         |,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_product_patent_csai\"","," ,"\"id\"",":","\"",a.achievement_id,"\"","}") as flow_source
         |,'csai' as source
         |from ods.o_csai_product_patent a left join csai_patent_authors b on a.achievement_id  = b.achievement_id
-      """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_patent_csai")
+      """.stripMargin).repartition(20).createOrReplaceTempView("wd_product_patent_csai")
 
-    spark.sql("insert overwrite table dwd.wd_product_patent_csai  select * from wd_product_patent_csai")
-
+    //spark.sql("insert overwrite table dwd.wd_product_patent_csai  select * from wd_product_patent_csai")
+    H2dbUtil.useH2("ods.o_csai_product_patent","dwd.wd_product_patent_csai")
+    H2dbUtil.useH2("ods.o_csai_product_patent_inventor","dwd.wd_product_patent_csai")
     //ms
     spark.sql(
       """
@@ -289,10 +291,11 @@ object Patent {
         |,concat("{","\"source\"",":","\"ms\"",",""\"table\"",":","\"wd_product_patent_ms\"","," ,"\"id\"",":","\"",a.achievement_id,"\"","}") as flow_source
         |,'ms' as source
         |from (select * from dwd.wd_product_ms_all where paper_type='2') a left join ms_authors b on a.achievement_id  = b.achievement_id
-      """.stripMargin).repartition(10).createOrReplaceTempView("product_ms")
+      """.stripMargin).repartition(20).createOrReplaceTempView("product_ms")
 
-     spark.sql("insert overwrite table dwd.wd_product_patent_ms  select * from product_ms")
-
+     //spark.sql("insert overwrite table dwd.wd_product_patent_ms  select * from product_ms")
+    H2dbUtil.useH2("dwd.wd_product_ms_all","dwd.wd_product_patent_ms")
+    H2dbUtil.useH2("ods.o_ms_product_author","dwd.wd_product_patent_ms")
     spark.stop()
 
 

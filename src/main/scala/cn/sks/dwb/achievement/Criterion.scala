@@ -1,7 +1,8 @@
 package cn.sks.dwb.achievement
 
+import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
-import cn.sks.util.{DefineUDF,NameToPinyinUtil,AchievementUtil}
+import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 
 /*
 
@@ -31,8 +32,8 @@ object Criterion {
 
     val product_csai = spark.read.table("dwd.wd_product_criterion_csai")
     val product_nsfc_person = spark.read.table("dwd.wd_product_criterion_nsfc")
-
-
+    H2dbUtil.useH2("dwd.wd_product_criterion_csai","dwb.wb_product_criterion_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_criterion_nsfc","dwb.wb_product_criterion_csai_nsfc")
     //数据融合
 
     val fusion_data_nsfc = AchievementUtil.explodeAuthors(spark,product_nsfc_person,"authors")

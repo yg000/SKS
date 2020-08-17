@@ -44,18 +44,9 @@ object org_final {
                     |from ods.o_csai_organization_all a full outer join ods.o_nsfc_organization_psn b on a.org_name = b.name
                     |""".stripMargin).createOrReplaceTempView("org_name_all")
 
-    spark.sql(
-      """
-        |select count(*)  from org_name_all
-        |""".stripMargin).show()
     spark.sql( """
                  |select * from (select *,row_number()over(partition by clean_fusion(org_name) order by org_name) as tid from org_name_all)a where tid =1
                  |""".stripMargin).createOrReplaceTempView("org_name_all")
-    spark.sql(
-      """
-        |select count(*)  from org_name_all
-        |""".stripMargin).show()
-
 
     spark.sql("""
                 |select

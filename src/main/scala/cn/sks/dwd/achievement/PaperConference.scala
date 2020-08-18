@@ -2,7 +2,7 @@ package cn.sks.dwd.achievement
 
 import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
-import cn.sks.util.{DefineUDF, NameToPinyinUtil}
+import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 /*
 
 论文数据的整合的整体的代码
@@ -82,8 +82,8 @@ object PaperConference {
         |from (select * from dwd.wd_product_ms_all where paper_type='3') a left join ms_authors b on a.achievement_id  = b.achievement_id
           """.stripMargin).repartition(10).createOrReplaceTempView("ms_product")
     //spark.sql("insert overwrite table dwd.wd_product_conference_ms  select * from ms_product")
-    H2dbUtil.useH2("dwd.wd_product_ms_all","dwd.wd_product_conference_ms")
-    H2dbUtil.useH2("ods.o_ms_product_author","dwd.wd_product_conference_ms")
+    AchievementUtil.getDataTrace(spark,"dwd.wd_product_ms_all","dwd.wd_product_conference_ms")
+    AchievementUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_product_conference_ms")
     //orcid会议论文数据
 
 
@@ -140,8 +140,8 @@ object PaperConference {
       """.stripMargin).repartition(10).createOrReplaceTempView("orcid_conference")
 
     //spark.sql("insert overwrite table dwd.wd_product_conference_orcid   select * from orcid_conference")
-    H2dbUtil.useH2("ods.o_orcid_product_conference","dwd.wd_product_conference_orcid")
-    H2dbUtil.useH2("ods.o_orcid_product_journal_conference_author","dwd.wd_product_conference_orcid")
+    AchievementUtil.getDataTrace(spark,"ods.o_orcid_product_conference","dwd.wd_product_conference_orcid")
+    AchievementUtil.getDataTrace(spark,"ods.o_orcid_product_journal_conference_author","dwd.wd_product_conference_orcid")
 
     //ren产出成果===================
     val nsfc_product_person = spark.sql(
@@ -195,7 +195,7 @@ object PaperConference {
     nsfc_product_person.repartition(10).createOrReplaceTempView("nsfc_product_person")
 
     //spark.sql("insert overwrite table dwd.wd_product_conference_nsfc   select * from nsfc_product_person")
-    H2dbUtil.useH2("ods.o_nsfc_product_conference","dwd.wd_product_conference_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_conference","dwd.wd_product_conference_nsfc")
 
 
     val nsfc_product_business = spark.sql(
@@ -249,7 +249,7 @@ object PaperConference {
     nsfc_product_business.repartition(5).createOrReplaceTempView("nsfc_product_business")
 
     //spark.sql("insert overwrite table dwd.wd_product_conference_project_nsfc  select * from nsfc_product_business")
-    H2dbUtil.useH2("ods.o_nsfc_project_conference","dwd.wd_product_conference_project_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_project_conference","dwd.wd_product_conference_project_nsfc")
 
     spark.sql(
       """
@@ -300,7 +300,7 @@ object PaperConference {
       """.stripMargin).repartition(5).createOrReplaceTempView("nsfc_product_npd")
 
     //spark.sql("insert overwrite table dwd.wd_product_conference_npd_nsfc  select * from nsfc_product_npd")
-    H2dbUtil.useH2("ods.o_nsfc_npd_conference","dwd.wd_product_conference_npd_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_npd_conference","dwd.wd_product_conference_npd_nsfc")
 
 
     spark.stop()

@@ -2,7 +2,7 @@ package cn.sks.dwd.achievement
 
 import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
-import cn.sks.util.{DefineUDF, NameToPinyinUtil}
+import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 /*
 
 论文数据的整合的整体的代码
@@ -80,7 +80,7 @@ object Patent {
       """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_patent_nsfc")
 
     //spark.sql("insert overwrite table dwd.wd_product_patent_nsfc  select * from wd_product_patent_nsfc")
-    H2dbUtil.useH2("ods.o_nsfc_product_patent","dwd.wd_product_patent_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_patent","dwd.wd_product_patent_nsfc")
 
     //项目产出成果
     spark.sql(
@@ -130,7 +130,7 @@ object Patent {
         |from ods.o_nsfc_project_patent
       """.stripMargin).repartition(20).createOrReplaceTempView("wd_product_patent_business_nsfc")
     //spark.sql("insert overwrite table dwd.wd_product_patent_project_nsfc  select * from wd_product_patent_business_nsfc")
-    H2dbUtil.useH2("ods.o_nsfc_project_patent","dwd.wd_product_patent_project_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_project_patent","dwd.wd_product_patent_project_nsfc")
 
     spark.sql(
       """
@@ -179,7 +179,7 @@ object Patent {
         |from ods.o_nsfc_npd_patent
       """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_patent_npd_nsfc")
     //spark.sql("insert overwrite table dwd.wd_product_patent_npd_nsfc  select * from wd_product_patent_npd_nsfc")
-    H2dbUtil.useH2("ods.o_nsfc_npd_patent","dwd.wd_product_patent_npd_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_npd_patent","dwd.wd_product_patent_npd_nsfc")
 
 
 
@@ -238,8 +238,8 @@ object Patent {
       """.stripMargin).repartition(20).createOrReplaceTempView("wd_product_patent_csai")
 
     //spark.sql("insert overwrite table dwd.wd_product_patent_csai  select * from wd_product_patent_csai")
-    H2dbUtil.useH2("ods.o_csai_product_patent","dwd.wd_product_patent_csai")
-    H2dbUtil.useH2("ods.o_csai_product_patent_inventor","dwd.wd_product_patent_csai")
+    AchievementUtil.getDataTrace(spark,"ods.o_csai_product_patent","dwd.wd_product_patent_csai")
+    AchievementUtil.getDataTrace(spark,"ods.o_csai_product_patent_inventor","dwd.wd_product_patent_csai")
     //ms
     spark.sql(
       """
@@ -294,8 +294,8 @@ object Patent {
       """.stripMargin).repartition(20).createOrReplaceTempView("product_ms")
 
      //spark.sql("insert overwrite table dwd.wd_product_patent_ms  select * from product_ms")
-    H2dbUtil.useH2("dwd.wd_product_ms_all","dwd.wd_product_patent_ms")
-    H2dbUtil.useH2("ods.o_ms_product_author","dwd.wd_product_patent_ms")
+    AchievementUtil.getDataTrace(spark,"dwd.wd_product_ms_all","dwd.wd_product_patent_ms")
+    AchievementUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_product_patent_ms")
     spark.stop()
 
 

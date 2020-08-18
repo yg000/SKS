@@ -2,7 +2,7 @@ package cn.sks.dwd.achievement
 
 import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
-import cn.sks.util.{DefineUDF, NameToPinyinUtil}
+import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 
 /*
 
@@ -54,7 +54,7 @@ object Monograph {
 
     product_nsfc_person.repartition(5).createOrReplaceTempView("wd_product_monograph_nsfc")
     //spark.sql("insert overwrite  table dwd.wd_product_monograph_nsfc   select * from wd_product_monograph_nsfc")
-    H2dbUtil.useH2("ods.o_nsfc_product_monograph","dwd.wd_product_monograph_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_monograph","dwd.wd_product_monograph_nsfc")
 
     val product_nsfc_project = spark.sql(
       """
@@ -81,7 +81,7 @@ object Monograph {
 
     product_nsfc_project.repartition(1).createOrReplaceTempView("wd_product_monograph_business_nsfc")
     //spark.sql("insert overwrite  table dwd.wd_product_monograph_project_nsfc  select * from wd_product_monograph_business_nsfc")
-    H2dbUtil.useH2("ods.o_nsfc_project_monograph","dwd.wd_product_monograph_project_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_project_monograph","dwd.wd_product_monograph_project_nsfc")
 
     val product_nsfc_npd = spark.sql(
       """
@@ -108,7 +108,7 @@ object Monograph {
 
     product_nsfc_npd.repartition(2).createOrReplaceTempView("wd_product_monograph_npd_nsfc")
     //spark.sql("insert overwrite  table dwd.wd_product_monograph_npd_nsfc  select * from wd_product_monograph_npd_nsfc")
-    H2dbUtil.useH2("ods.o_nsfc_npd_monograph","dwd.wd_product_monograph_npd_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_npd_monograph","dwd.wd_product_monograph_npd_nsfc")
 
 
     spark.sql(
@@ -142,8 +142,8 @@ object Monograph {
 
     product_csai.repartition(1).createOrReplaceTempView("wd_product_monograph_csai")
     //spark.sql("insert overwrite  table dwd.wd_product_monograph_csai  select * from wd_product_monograph_csai")
-    H2dbUtil.useH2("ods.o_csai_product_monograph","dwd.wd_product_monograph_csai")
-    H2dbUtil.useH2("ods.o_csai_product_monograph_author","dwd.wd_product_monograph_csai")
+    AchievementUtil.getDataTrace(spark,"ods.o_csai_product_monograph","dwd.wd_product_monograph_csai")
+    AchievementUtil.getDataTrace(spark,"ods.o_csai_product_monograph_author","dwd.wd_product_monograph_csai")
 
     //ms
     spark.sql(
@@ -175,8 +175,8 @@ object Monograph {
       """.stripMargin)
     product_ms.repartition(10).createOrReplaceTempView("product_ms")
     spark.sql("insert overwrite  table dwd.wd_product_monograph_ms  select * from product_ms")
-    H2dbUtil.useH2("dwd.wd_product_ms_all","dwd.wd_product_monograph_ms")
-    H2dbUtil.useH2("ods.o_ms_product_author","dwd.wd_product_monograph_ms")
+    AchievementUtil.getDataTrace(spark,"dwd.wd_product_ms_all","dwd.wd_product_monograph_ms")
+    AchievementUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_product_monograph_ms")
 
 
     spark.stop()

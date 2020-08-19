@@ -4,6 +4,21 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object AchievementUtil {
 
+  def tranferAchievementID(spark:SparkSession,df:DataFrame,col_name:String):DataFrame={
+
+    df.createOrReplaceTempView("tb_name")
+
+    spark.sql(
+      s"""
+        |select
+        |a.*,
+        |ifnull(b.achievement_id, a.$col_name)as new_achievement_id
+        | from tb_name a left join dwb.wb_product_rel b on a.$col_name = b.achievement_id_origin
+      """.stripMargin)
+
+
+  }
+
 
   def getAuthors(spark:SparkSession,table_name:String,authers_tb:String,col_name:String):DataFrame={
     spark.sql(

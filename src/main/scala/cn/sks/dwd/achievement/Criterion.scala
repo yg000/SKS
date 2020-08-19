@@ -1,8 +1,8 @@
 package cn.sks.dwd.achievement
 
 import org.apache.spark.sql.{Column, SparkSession}
-import cn.sks.util.{DefineUDF,NameToPinyinUtil}
-
+import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
+import cn.sks.jutil.H2dbUtil
 /*
 
 论文数据的整合的整体的代码
@@ -64,9 +64,9 @@ object Criterion {
 
     product_csai.repartition(10).createOrReplaceTempView("wd_product_criterion_csai")
 
-    spark.sql("insert overwrite  table dwd.wd_product_criterion_csai  select * from wd_product_criterion_csai")
-
-
+    //spark.sql("insert overwrite  table dwd.wd_product_criterion_csai  select * from wd_product_criterion_csai")
+    AchievementUtil.getDataTrace(spark,"ods.o_csai_criterion","dwd.wd_product_criterion_csai")
+    AchievementUtil.getDataTrace(spark,"dwb.wb_product_all_person","dwd.wd_product_criterion_csai")
     val product_nsfc_person = spark.sql(
       """
         |select
@@ -94,8 +94,8 @@ object Criterion {
       """.stripMargin)
 
     product_nsfc_person.repartition(1).createOrReplaceTempView("wd_product_criterion_nsfc")
-    spark.sql("insert overwrite  table dwd.wd_product_criterion_nsfc  select * from wd_product_criterion_nsfc")
-
+    //spark.sql("insert overwrite  table dwd.wd_product_criterion_nsfc  select * from wd_product_criterion_nsfc")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_criterion","dwd.wd_product_criterion_nsfc")
 
 
 

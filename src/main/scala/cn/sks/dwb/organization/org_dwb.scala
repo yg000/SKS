@@ -1,7 +1,7 @@
 package cn.sks.dwb.organization
 
 import org.apache.spark.sql.SparkSession
-import cn.sks.util.{DefineUDF,BuildOrgIDUtil}
+import cn.sks.util.{BuildOrgIDUtil, DefineUDF, OrganizationUtil}
 
 object org_dwb {
 
@@ -28,24 +28,16 @@ object org_dwb {
   def main(args: Array[String]): Unit = {
 
 
-    val jdbcD2=spark.read.format("jdbc").options(Map("url" -> "jdbc:mysql://10.0.88.77:3306/test?user=root&password=123456","dbtable" -> "dictionary_china_region","driver" -> "com.mysql.jdbc.Driver")).load()
-    jdbcD2.registerTempTable("dictionary_china_region")
-
     spark.sql("""
-                |select  pinyin,split(merger_name,',')[1] as province,short_name,name  from dictionary_china_region where level_type in('1')
+                |select  pinyin,split(merger_name,',')[1] as province,short_name,name  from ods.o_const_dictionary_china_region where level_type in('1')
                 |""".stripMargin).createOrReplaceTempView("dictionary_china_province")
 
     spark.sql("""
-                |select  pinyin,split(merger_name,',')[1] as province,short_name,name,zip_code from (select * ,row_number()over(partition by short_name order by level_type,id) as tid from dictionary_china_region where level_type in('2','3'))a where tid = 1
+                |select  pinyin,split(merger_name,',')[1] as province,short_name,name,zip_code from (select * ,row_number()over(partition by short_name order by level_type,id) as tid from ods.o_const_dictionary_china_region where level_type in('2','3'))a where tid = 1
                 |""".stripMargin).createOrReplaceTempView("dictionary_china_region")
 
-    spark.sql( """
-                 |select * from (select *,row_number()over(partition by clean_fusion(org_name) order by org_name desc) as tid from dwd.wd_organization_sts ) a where tid =1
-                 |""".stripMargin).createOrReplaceTempView("wd_organization_sts")
-
-    spark.sql( """
-                 |select * from (select *,row_number()over(partition by clean_fusion(org_name) order by org_name desc) as tid from dwd.wd_organization_nsfc ) a where tid =1
-                 |""".stripMargin).createOrReplaceTempView("wd_organization_nsfc")
+    OrganizationUtil.dropDuplicates(spark,spark.read.table("dwd.wd_organization_sts"),"org_name","org_name").createOrReplaceTempView("wd_organization_sts")
+    OrganizationUtil.dropDuplicates(spark,spark.read.table(" dwd.wd_organization_nsfc "),"org_name","org_name").createOrReplaceTempView("wd_organization_nsfc")
 
 
     spark.sql("""

@@ -1,5 +1,6 @@
 package cn.sks.dwb.achievement
 
+import cn.sks.jutil.H2dbUtil
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 import org.apache.spark.sql.{Column, SparkSession}
 
@@ -28,7 +29,7 @@ object Monograph {
     spark.udf.register("clean_separator", DefineUDF.clean_separator _)
     //融合的函数
     spark.udf.register("clean_fusion", DefineUDF.clean_fusion _)
-
+    spark.udf.register("union_flow_source", DefineUDF.unionFlowSource _)
 
     //数据处理过程中的代码===================
     val product_nsfc_person = spark.read.table("dwd.wd_product_monograph_nsfc")
@@ -37,6 +38,12 @@ object Monograph {
     val product_csai = spark.read.table("dwd.wd_product_monograph_csai")
     val product_ms = spark.read.table("dwd.wd_product_monograph_ms")
 
+    H2dbUtil.useH2("dwd.wd_product_monograph_nsfc","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_monograph_project_nsfc","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_monograph_npd_nsfc","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwd.wd_product_monograph_csai","dwb.wb_product_monograph_csai_nsfc")
+    H2dbUtil.useH2("dwb.wb_product_monograph_csai_nsfc","dwb.wb_product_monograph_csai_nsfc_ms")
+    H2dbUtil.useH2("dwd.wd_product_monograph_ms","dwb.wb_product_monograph_csai_nsfc_ms")
     //将基金委对应的论文成果对应的作者和论文的字段合并到一块儿
     val product_nsfc = product_nsfc_person.union(product_nsfc_project).union(product_nsfc_npd).dropDuplicates("achievement_id")
 
@@ -50,7 +57,7 @@ object Monograph {
     AchievementUtil.getComparisonTable(spark,"fushion_data_nsfc_pinyin","fushion_data_csai_pinyin")
       .createOrReplaceTempView("wb_product_monograph_csai_nsfc_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_rel  select * from wb_product_monograph_csai_nsfc_rel")
+    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_monograph_csai_nsfc_rel")
 
     AchievementUtil.getSource(spark,"wb_product_monograph_csai_nsfc_rel").createOrReplaceTempView("get_source")
 
@@ -74,7 +81,7 @@ object Monograph {
         |,page_range
         |,word_count
         |,publisher
-        |,ifnull(b.source,flow_source) as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
         |,a.source
         |from o_product_monograph_csai_nsfc a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_monograph_csai_nsfc_get_source")
@@ -104,9 +111,9 @@ object Monograph {
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_ms, "person_name")
       .createOrReplaceTempView("fushion_data_ms_pinyin")
 
-    AchievementUtil.getComparisonTable(spark,"fushion_data_csai_nsfc_pinyin","fushion_data_ms_pinyin").createOrReplaceTempView("wb_product_monograph_csai_nsfc_ms_rel")
+    AchievementUtil.getComparisonTable(spark,"fushion_data_ms_pinyin","fushion_data_csai_nsfc_pinyin").createOrReplaceTempView("wb_product_monograph_csai_nsfc_ms_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_ms_rel  select * from wb_product_monograph_csai_nsfc_ms_rel")
+    spark.sql("insert overwrite table dwb.wb_product_monograph_csai_nsfc_ms_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_monograph_csai_nsfc_ms_rel")
 
     AchievementUtil.getSource(spark,"wb_product_monograph_csai_nsfc_ms_rel").createOrReplaceTempView("get_source")
 
@@ -131,7 +138,7 @@ object Monograph {
         |,page_range
         |,word_count
         |,publisher
-        |,ifnull(b.source,flow_source) as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
         |,a.source
         |from o_product_monograph a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_monograph_csai_nsfc_ms_get_source")

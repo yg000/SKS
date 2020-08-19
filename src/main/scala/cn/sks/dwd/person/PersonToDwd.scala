@@ -4,7 +4,7 @@ import java.util.Date
 
 import org.apache.spark.sql.SparkSession
 
-object Person {
+object PersonToDwd {
 
   def main(args: Array[String]): Unit = {
     person_to_dwd()
@@ -30,7 +30,8 @@ object Person {
         |  ,person_name  as zh_name
         |  ,org_id
         |  ,org_name
-        |  ,concat("{","\"source\"",":","\"ms\"",",""\"table\"",":","\"wd_person_ms\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as source
+        |  ,'ms' as source
+        |  ,concat("{","\"source\"",":","\"ms\"",",""\"table\"",":","\"wd_person_ms\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as flow_source
         |from ods.o_ms_product_author
         |""".stripMargin)
 
@@ -50,7 +51,8 @@ object Person {
         |  ,email
         |  ,prof_title
         |  ,position
-        |  ,concat("{","\"source\"",":","\"arp\"",",""\"table\"",":","\"wd_person_arp\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as source
+        |  ,'arp' as source
+        |  ,concat("{","\"source\"",":","\"arp\"",",""\"table\"",":","\"wd_person_arp\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as flow_source
         |from ods.o_arp_person
       """.stripMargin)
 
@@ -75,7 +77,8 @@ object Person {
         |  ,a.academician_selection_date
         |  ,a.birthplace
         |  ,a.brief_description
-        |  ,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_person_academician\"","," ,"\"person_id\"",":","\"",a.person_id,"\"","}") as source
+        |  ,'academician' as source
+        |  ,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_person_academician\"","," ,"\"person_id\"",":","\"",a.person_id,"\"","}") as flow_source
         |from ods.o_csai_person_academician a
         |left join ods.o_csai_person_all b
         |on a.person_id=b.person_id
@@ -100,7 +103,8 @@ object Person {
         |  ,a.isoutstanding
         |  ,a.birthplace
         |  ,a.brief_description
-        |  ,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_person_csai\"","," ,"\"person_id\"",":","\"",a.person_id,"\"","}") as source
+        |  ,'csai' as source
+        |  ,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_person_csai\"","," ,"\"person_id\"",":","\"",a.person_id,"\"","}") as flow_source
         |from ods.o_csai_person_all a
         | where not exists (select * from ods.o_csai_person_academician b where a.person_id=b.person_id)
       """.stripMargin)
@@ -114,30 +118,31 @@ object Person {
         |    person_id
         |   ,zh_name
         |   ,null  as en_name
-        |   ,case when trim(gender)= 'M' then '男'  when trim(gender)= 'F' then '女' end
+        |   ,case when trim(gender)= 'M' then '男'  when trim(gender)= 'F' then '女' end as gender
         |   ,c.zh_cn_caption    as nation
-        |   ,split(birthday,' ')[0]
+        |   ,split(birthday,' ')[0] as birthday
         |   ,null as birthplace
         |   ,org_id
         |   ,org_name
         |   ,b.dept_name
         |
-        |   ,identity_card       as   idCard
-        |   ,military_id         as   officerNo
-        |   ,passport            as   passportNo
-        |   ,home_return_permit  as   hkIdNo
-        |   ,mainland_travel_permit_for_taiwan_residents  as  twIdNo
+        |   ,identity_card       as   id_card
+        |   ,military_id         as   officer_no
+        |   ,passport            as   passport_no
+        |   ,home_return_permit  as   hkid_no
+        |   ,mainland_travel_permit_for_taiwan_residents  as  twid_no
         |
         |   ,position
         |   ,g.prof_title
         |   ,a.prof_title_id
-        |   ,null as researchArea
+        |   ,null as research_area
+        |   ,null as person_type
         |
         |   ,mobile
         |   ,tel
         |   ,email
         |   ,fax
-        |   ,backupemail
+        |   ,backupemail as backup_email
         |
         |   ,address
         |   ,d.zh_cn_caption   as  nationality
@@ -147,11 +152,12 @@ object Person {
         |   ,null as avatar_url
         |
         |   ,f.zh_cn_caption as     degree
-        |   ,degreeyear
-        |   ,e.zh_cn_caption as degreecountry
+        |   ,degreeyear  as degree_year
+        |   ,e.zh_cn_caption as degree_country
         |   ,major
         |   ,null as brief_description
-        |   ,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_person_nsfc\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as source
+        |   ,'nsfc' as source
+        |   ,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_person_nsfc\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as flow_source
         |from ods.o_nsfc_person  a
         |left join ods.o_nsfc_organization_department b
         |on a.dept_code = b.dept_code

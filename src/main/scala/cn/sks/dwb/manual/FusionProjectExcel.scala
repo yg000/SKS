@@ -1,6 +1,6 @@
 package cn.sks.dwb.manual
 
-import cn.sks.util.{BuildOrgIDUtil, DefineUDF}
+import cn.sks.util.{BuildOrgIDUtil, CommonUtil, DefineUDF}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object FusionProjectExcel {
@@ -28,18 +28,18 @@ object FusionProjectExcel {
     // 项目融合（人工excel中的项目：wd_manual_excel_project  以及 奖励中的项目：wd_manual_excel_reward_project ）
     // 1、人工excel 项目
     val manual_project = spark.sql(
-        """
-          |select id,
-          |project_name as zh_title,
-          |project_no as prj_no ,
-          |zh_name as psn_name,
-          |org_name,
-          |project_year as approval_year,
-          |CleanDate(start_date) as start_date,
-          |CleanDate(end_date) as end_date,
-          |CleanFusion(project_name) as clean_zh_title
-          | from dwd.wd_manual_excel_project
-        """.stripMargin)
+      """
+        |select id,
+        |project_name as zh_title,
+        |project_no as prj_no ,
+        |zh_name as psn_name,
+        |org_name,
+        |project_year as approval_year,
+        |CleanDate(start_date) as start_date,
+        |CleanDate(end_date) as end_date,
+        |CleanFusion(project_name) as clean_zh_title
+        | from dwd.wd_manual_excel_project
+      """.stripMargin)
     manual_project.createOrReplaceTempView("manual_project")
 
     // 基金委项目
@@ -60,7 +60,7 @@ object FusionProjectExcel {
     rel_person_project.createOrReplaceTempView("rel_person_project")
     // excel 项目不存在于基金委中的项目
     val person_project_not_exists = spark.sql("select md5(clean_zh_title) as project_id,* from manual_project a  where not exists (select * from rel_person_project b where a.id=b.id)")
-        .drop("clean_zh_title").dropDuplicates("project_id")
+      .drop("clean_zh_title").dropDuplicates("project_id")
     person_project_not_exists.createOrReplaceTempView("person_project_not_exists")
 
     // 给不能融合的项目 添加 person_id （关联项目中的人员融合表）
@@ -73,7 +73,7 @@ object FusionProjectExcel {
       """.stripMargin).drop("id")
 
     // 合并 基金委项目，与不能融合的项目
-    val project_temp = completionFields(spark,person_project_not_exists_replace_person_id,project_nsfc).union(project_nsfc)
+    val project_temp = CommonUtil.completionSchemaFields(spark,person_project_not_exists_replace_person_id,project_nsfc).union(project_nsfc)
     project_temp.createOrReplaceTempView("project_temp")
     spark.sql("select *,CleanFusion(zh_title) as clean_zh_title from project_temp").createOrReplaceTempView("origin_project_temp")
 
@@ -105,7 +105,7 @@ object FusionProjectExcel {
     val reward_project_not_exists = spark.sql("select md5(clean_zh_title) as project_id,id as person_id,* from manual_reward_project a  where not exists (select * from rel_reward_project b where a.id=b.id)")
       .drop("id").drop("clean_zh_title").dropDuplicates("project_id")
 
-    val wb_project = completionFields(spark,reward_project_not_exists,project_nsfc).union(project_temp)
+    val wb_project = CommonUtil.completionSchemaFields(spark,reward_project_not_exists,project_nsfc).union(project_temp)
 
     // 项目对应关系
     rel_person_project.union(rel_reward_project).toDF("id","project_id_nsfc").createOrReplaceTempView("wb_project_excel_nsfc_rel")
@@ -155,47 +155,24 @@ object FusionProjectExcel {
     wb_project_special_project.createOrReplaceTempView("wb_project_special_project")
 
 
-//    spark.sql("insert into table dwb.wb_project_organization_lead select * from project_org_lead where org_id is not null ")
-//    spark.sql("insert into table dwb.wb_project_organization_participation select * from project_org_participation  where org_id is not null")
+    //    spark.sql("insert into table dwb.wb_project_organization_lead select * from project_org_lead where org_id is not null ")
+    //    spark.sql("insert into table dwb.wb_project_organization_participation select * from project_org_participation  where org_id is not null")
 
 
-//    spark.sql("insert into table dwb.wb_project_excel_nsfc_rel select * from wb_project_excel_nsfc_rel")
-//
-//    spark.sql("insert into table dwb.wb_project select * from wb_project")
-//    spark.sql("insert into table dwb.wb_project_reward select * from wb_project_reward")
-//
-//    spark.sql("insert into table dwb.wb_project_special_project select * from wb_project_special_project")
-//
-//    spark.sql("insert into table dwb.wb_project_person_lead            select project_id,person_id from wb_project")
-//    spark.sql("insert into table dwb.wb_project_person_participation   select  project_id,person_id from project_person_participation")
-
-
+    //    spark.sql("insert into table dwb.wb_project_excel_nsfc_rel select * from wb_project_excel_nsfc_rel")
+    //
+    //    spark.sql("insert into table dwb.wb_project select * from wb_project")
+    //    spark.sql("insert into table dwb.wb_project_reward select * from wb_project_reward")
+    //
+    //    spark.sql("insert into table dwb.wb_project_special_project select * from wb_project_special_project")
+    //
+    //    spark.sql("insert into table dwb.wb_project_person_lead            select project_id,person_id from wb_project")
+    //    spark.sql("insert into table dwb.wb_project_person_participation   select  project_id,person_id from project_person_participation")
 
 
   }
 
-   // 根据目标表自动校准 schema ，缺少字段，自动补空
-  def completionFields(spark:SparkSession,originDF:DataFrame,targetTable:DataFrame):DataFrame = {
-    var origin =originDF
-    val origin_list = origin.schema.fieldNames.toList
-    val target_list: List[String] = targetTable.schema.fieldNames.toList
 
-    val diff_list = target_list diff origin_list
-    import org.apache.spark.sql._
-    val udf_null = functions.udf(()=> null )
-    diff_list.foreach(x=>{
-      origin=origin.withColumn(x,udf_null())
-    })
-
-    val build = new StringBuilder
-    build.append("select  ")
-    targetTable.schema.fieldNames.foreach(x=>{
-      build.append(x+",")
-    })
-
-    origin.createOrReplaceTempView("temp")
-    spark.sql(build.toString().stripSuffix(",") +  "  from temp")
-  }
 
 }
 

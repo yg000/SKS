@@ -32,8 +32,6 @@ object Criterion {
 
     val product_csai = spark.read.table("dwd.wd_product_criterion_csai")
     val product_nsfc_person = spark.read.table("dwd.wd_product_criterion_nsfc")
-    H2dbUtil.useH2("dwd.wd_product_criterion_csai","dwb.wb_product_criterion_csai_nsfc")
-    H2dbUtil.useH2("dwd.wd_product_criterion_nsfc","dwb.wb_product_criterion_csai_nsfc")
     //数据融合
 
     val fusion_data_nsfc = AchievementUtil.explodeAuthors(spark,product_nsfc_person,"authors")
@@ -71,7 +69,7 @@ object Criterion {
         |,publish_agency
         |,hasFullText
         |,fulltext_url
-        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source,"name+title"),flow_source  )as flow_source
         |,a.source
         |from o_product_criterion a left join get_source b on a.achievement_id = b.achievement_id
         |""".stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_criterion_get_source")
@@ -80,7 +78,7 @@ object Criterion {
       """
         |insert overwrite table dwb.wb_product_criterion_csai_nsfc
         |select a.*
-        |from product_criterion_get_source a left join  dwb.wb_product_criterion_csai_nsfc_rel b on a.achievement_id = b.achievement_id_nsfc where b.achievement_id_nsfc is null
+        |from product_criterion_get_source a left join  dwb.wb_product_criterion_csai_nsfc_rel b on a.achievement_id = b.achievement_id_from where b.achievement_id_from is null
         |""".stripMargin)
 
 

@@ -1,7 +1,7 @@
 package cn.sks.dwb.organization
 
 import org.apache.spark.sql.SparkSession
-import cn.sks.util.{DefineUDF,BuildOrgIDUtil}
+import cn.sks.util.{AchievementUtil, BuildOrgIDUtil, DefineUDF}
 
 object org_final {
   val spark = SparkSession.builder()
@@ -20,8 +20,10 @@ object org_final {
   })
 
   def main(args: Array[String]): Unit = {
-
-
+    AchievementUtil.getDataTrace(spark,"ods.o_csai_organization_all","dwb.wb_organization")
+    AchievementUtil.getDataTrace(spark,"ods.o_nsfc_organization_psn","dwb.wb_organization")
+    AchievementUtil.getDataTrace(spark,"ods.o_ms_organization","dwb.wb_organization")
+    AchievementUtil.getDataTrace(spark,"dwb.wb_organization_manual_sts_nsfc","dwb.wb_organization")
 //    spark.sql("""
 //                |select org_name,"csai" as source from ods.o_csai_organization_all
 //                |union

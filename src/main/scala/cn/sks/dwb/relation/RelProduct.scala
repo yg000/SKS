@@ -107,7 +107,7 @@ object RelProduct {
         |from product_subject
       """.stripMargin).repartition(10).createOrReplaceTempView("product_subject")
 
-    spark.sql("insert overwrite table dwb.wb_product_project_rel select * from product_subject  ")
+    //spark.sql("insert overwrite table dwb.wb_product_project_rel select * from product_subject  ")
 
   }
 }

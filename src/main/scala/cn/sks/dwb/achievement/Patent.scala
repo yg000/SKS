@@ -43,12 +43,6 @@ object Patent {
     val product_nsfc_npd = spark.read.table("dwd.wd_product_patent_npd_nsfc")
     val product_ms =  spark.read.table("dwd.wd_product_patent_ms")
 
-    H2dbUtil.useH2("dwd.wd_product_patent_csai","dwb.wb_product_patent_csai_nsfc")
-    H2dbUtil.useH2("dwd.wd_product_patent_nsfc","dwb.wb_product_patent_csai_nsfc")
-    H2dbUtil.useH2("dwd.wd_product_patent_project_nsfc","dwb.wb_product_patent_csai_nsfc")
-    H2dbUtil.useH2("dwd.wd_product_patent_npd_nsfc","dwb.wb_product_patent_csai_nsfc")
-    H2dbUtil.useH2("dwb.wb_product_patent_csai_nsfc","dwb.wb_product_patent_csai_nsfc_ms")
-    H2dbUtil.useH2("dwd.wd_product_patent_ms","dwb.wb_product_patent_csai_nsfc_ms")
     //将基金委对应的论文成果对应的作者和论文的字段合并到一块儿
 
 
@@ -114,7 +108,7 @@ object Patent {
         |,two_rank_id
         |,two_rank_no
         |,two_rank_name
-        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source,'name+title'),flow_source  )as flow_source
         |,a.source
         |from o_product_patent_csai_nsfc a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_patent_csai_nsfc_get_source")
@@ -124,7 +118,7 @@ object Patent {
       """
         |insert overwrite table dwb.wb_product_patent_csai_nsfc
         |select a.*
-        |from product_patent_csai_nsfc_get_source a left join  dwb.wb_product_patent_csai_nsfc_rel b on a.achievement_id = b.achievement_id_nsfc where b.achievement_id_nsfc is null
+        |from product_patent_csai_nsfc_get_source a left join  dwb.wb_product_patent_csai_nsfc_rel b on a.achievement_id = b.achievement_id_from where b.achievement_id_from is null
         |""".stripMargin)
 
 // csai_nsfc_ms
@@ -194,7 +188,7 @@ object Patent {
         |,two_rank_id
         |,two_rank_no
         |,two_rank_name
-        |,if(b.source is not null, union_flow_source(b.source,flow_source),flow_source  )as flow_source
+        |,if(b.source is not null, union_flow_source(b.source,flow_source,'name+title'),flow_source  )as flow_source
         |,a.source
         |from o_product_patent a left join get_source b on a.achievement_id = b.achievement_id
       """.stripMargin).dropDuplicates("achievement_id").createOrReplaceTempView("product_patent_csai_nsfc_ms_get_source")
@@ -204,7 +198,7 @@ object Patent {
       """
         |insert overwrite table dwb.wb_product_patent_csai_nsfc_ms
         |select a.*
-        |from product_patent_csai_nsfc_ms_get_source a left join  dwb.wb_product_patent_csai_nsfc_ms_rel b on a.achievement_id = b.achievement_id_ms where b.achievement_id_ms is null
+        |from product_patent_csai_nsfc_ms_get_source a left join  dwb.wb_product_patent_csai_nsfc_ms_rel b on a.achievement_id = b.achievement_id_from where b.achievement_id_from is null
         |""".stripMargin)
 
   }

@@ -1,247 +1,116 @@
 package cn.sks.dwb.person
 
-import cn.sks.util.{DefineUDF, NameToPinyinUtil}
+import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil, PersonUtil}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
+
 object PersonFusionMs {
   def main(args: Array[String]): Unit = {
 
     val spark = SparkSession.builder()
-      .master("local[*]")
+      //.master("local[40]")
       .appName("PersonFusionMs")
-      .config("spark.deploy.mode","16g")
-      .config("spark.drivermemory","96g")
-      .config("spark.cores.max","32")
+      .config("spark.local.dir", "/data/tmp")
       .config("hive.metastore.uris","thrift://10.0.82.132:9083")
       .enableHiveSupport()
       .getOrCreate()
 
-    spark.sqlContext.udf.register("CleanFusion",(str:String) =>{
+    spark.sqlContext.udf.register("clean_fusion",(str:String) =>{
       DefineUDF.clean_fusion(str)
     })
-    val origin = spark.sql("select person_id,zh_name,source from dwb.wb_person_nsfc_sts_academician_csai")
-    val person_to_pinyin = NameToPinyinUtil.nameToPinyin(spark,origin,"zh_name")
-    person_to_pinyin.createOrReplaceTempView("person_to_pinyin")
-
-    val person_origin= spark.sql(
-      """
-        |select * ,CleanFusion(zh_name) as clean_zh_name,
-        | CleanFusion(en_name_normal) as clean_en_name_normal,
-        | CleanFusion(en_name_inverted) as clean_en_name_inverted
-        |from person_to_pinyin
-        |""".stripMargin).drop("en_name_normal").drop("en_name_inverted")
-    person_origin.createOrReplaceTempView("person_origin")
+    spark.udf.register("union_flow_source", DefineUDF.unionFlowSource _)
 
 
-    val person_ms = spark.sql(
-      """
-        |select *,CleanFusion(zh_name) as clean_zh_name
-        | from dwd.wd_person_ms
-        |""".stripMargin).dropDuplicates("person_id")
-    person_ms.createOrReplaceTempView("person_ms")
+    spark.read.table("dwd.wd_product_person_ext_csai").select("person_id","achievement_id","product_type","zh_name","en_name","zh_title","en_title","source")
+      .unionAll(spark.read.table("dwd.wd_product_person_ext_nsfc").select("person_id","achievement_id","product_type","zh_name","en_name","zh_title","en_title","source")).createOrReplaceTempView("wd_product_person")
+    // 62462674
+    val person_to = spark.read.table("dwb.wb_person_nsfc_sts_academician_csai").cache()
 
-    // 187866707
-    val product_person_ext = spark.sql(
-      """
-        |select person_id,CleanFusion(zh_title) as clean_zh_title from dwd.wd_product_person_ext_nsfc
-        | union all
-        |select person_id,CleanFusion(zh_title) as clean_zh_title from dwd.wd_product_person_ext_csai
-        |""".stripMargin)
-    product_person_ext.createOrReplaceTempView("product_person_ext")
-    println(product_person_ext.count())
+    // 26316123
+    val person_from = spark.read.table("dwd.wd_person_ms").cache()
 
+    val person_from_distinct_pinyin = NameToPinyinUtil.nameToPinyin(spark, person_from, "zh_name")
+    person_from_distinct_pinyin.createOrReplaceTempView("person_from_distinct_pinyin")
 
-    val person_origin_title = spark.sql(
-      """
-        |select a.*,clean_zh_title from person_origin a left join product_person_ext b on a.person_id =b.person_id  where clean_zh_title is not null
-        |""".stripMargin).cache()
-    person_origin_title.createOrReplaceTempView("person_origin_title")
-    person_origin_title.show(3)
+    val person_from_distinct_with_title  = PersonUtil.getAddTitle(spark,person_from_distinct_pinyin,"dwd.wd_product_person_ext_csai")
+    person_from_distinct_with_title.printSchema()
+    println(person_from_distinct_with_title.count())
 
-    println("person_ms_title")
-    val person_ms_title =spark.sql(
-      """
-        |select a.*,clean_zh_title from person_ms a left join product_person_ext b on a.person_id =b.person_id
-        |""".stripMargin).cache()
-    person_ms_title.createOrReplaceTempView("person_ms_title")
+    val person_from_distinct_rule1_rel = PersonUtil.getDistinctRelationSecond(spark,person_from_distinct_with_title.select("person_id","clean_title","en_name_normal"),"clean_title","en_name_normal","").dropDuplicates("person_id_from")
+    val person_from_distinct_rule1 = PersonUtil.getWithOut(spark,person_from_distinct_with_title,person_from_distinct_rule1_rel)
+    val person_from_distinct_rule2_rel = PersonUtil.getDistinctRelationSecond(spark,person_from_distinct_with_title.select("person_id","clean_title","en_name_inverted"),"clean_title","en_name_inverted","").dropDuplicates("person_id_from")
+    val person_from_distinct_rule2 = PersonUtil.getWithOut(spark,person_from_distinct_rule1,person_from_distinct_rule2_rel)
 
 
-    // 1---- clean_zh_name  clean_zh_title
-    val rel_person_zh= spark.sql(
-      """
-        |select * from (
-        |  select
-        |  a.person_id as person_id_ms,b.person_id  as person_id,
-        |  concat("{","\"from\"",":",a.source,",","\"to\"",":",b.source,",","\"rule\"",":","\"zh_name+zh_title\"","}") as source
-        |  from  person_ms_title a join person_origin_title b
-        |  on a.clean_zh_name=b.clean_zh_name and a.clean_zh_title= b.clean_zh_title
-        |  )a
-        |group by person_id_ms,person_id,source
-      """.stripMargin)
-    rel_person_zh.createOrReplaceTempView("rel_person_zh")
+    val distinct_relation = PersonUtil.getDeliverRelation(spark,person_from_distinct_rule1_rel,person_from_distinct_rule2_rel).union(person_from_distinct_rule2_rel)
 
-    // rel_person_zh  person_id_ms  person_id
-    //3987   3164   1120
+    val person_to_with_title  = PersonUtil.getAddTitle(spark,NameToPinyinUtil.nameToPinyin(spark, person_to, "zh_name"),"wd_product_person")
 
-    val except_zh = spark.sql("select a.* from person_ms_title a where not exists (select * from rel_person_zh b where a.person_id=b.person_id)")
-    except_zh.createOrReplaceTempView("except_zh")
+    val person_from_with_title  = person_from_distinct_rule2
 
-    // 2---- clean_en_name_inverted  clean_zh_title
-    println("clean_en_name_inverted")
-    val rel_person_inverted= spark.sql(
-      """
-        |select * from (
-        |  select
-        |  a.person_id as person_id_ms,b.person_id  as person_id,
-        |  concat("{","\"from\"",":",a.source,",","\"to\"",":",b.source,",","\"rule\"",":","\"zh_name+zh_title\"","}") as source
-        |  from  except_zh a join person_origin_title b
-        |  on a.clean_zh_name=b.clean_en_name_inverted and a.clean_zh_title= b.clean_zh_title
-        |  )a
-        |group by person_id_ms,person_id,source
-      """.stripMargin)
-    rel_person_inverted.createOrReplaceTempView("rel_person_inverted")
+    val person_fusion_1 = PersonUtil.getComparisonTable(spark,person_to_with_title,person_from_with_title,"en_name_normal","clean_title","","zh_name+title")
+    println(person_fusion_1.count())
 
+    val person_fusion_2 = PersonUtil.getComparisonTable(spark,person_to_with_title,person_from_with_title,"en_name_inverted","clean_title","","zh_name+title")
+    println(person_fusion_2.count())
 
-    // 52081022
-    val except_inverted = spark.sql("select a.* from person_ms_title a where not exists (select * from rel_person_inverted b where a.person_id=b.person_id)")
-    except_inverted.createOrReplaceTempView("except_inverted")
-    println(except_inverted.count())
+    val person_fusion_relation = person_fusion_1.unionAll(person_fusion_2).dropDuplicates("person_id_from")
+    person_fusion_relation.createOrReplaceTempView("comparison_table")
+    PersonUtil.getSource(spark,"comparison_table").createOrReplaceTempView("get_source")
 
+    person_to.unionAll(person_from).createOrReplaceTempView("person_nsfc_sts_academician_csai_ms")
 
-//    2773231    490076   216250
-    println(rel_person_inverted.count())
-    println(rel_person_inverted.select("person_id_ms").distinct().count())
-    println(rel_person_inverted.select("person_id").distinct().count())
-
-
-    // 3---- clean_en_name_normal  clean_zh_title
-    val rel_person_normal= spark.sql(
-      """
-        |select * from (
-        |  select
-        |  a.person_id as person_id_ms,b.person_id  as person_id,
-        |  concat("{","\"from\"",":",a.source,",","\"to\"",":",b.source,",","\"rule\"",":","\"zh_name+zh_title\"","}") as source
-        |  from  person_ms_title a join person_origin_title b
-        |  on a.clean_zh_name=b.clean_en_name_normal and a.clean_zh_title= b.clean_zh_title
-        |  )a
-        |group by person_id_ms,person_id,source
-      """.stripMargin)
-    rel_person_normal.createOrReplaceTempView("rel_person_normal")
-
-//    240807   30443   19298
-
-    println("clean_en_name_normal")
-    println(rel_person_normal.count())
-    println(rel_person_normal.select("person_id_ms").distinct().count())
-    println(rel_person_normal.select("person_id").distinct().count())
-
-
-    rel_person_zh.show(5)
-    rel_person_zh.take(5).foreach(println)
-
-    rel_person_inverted.show(5)
-    rel_person_inverted.take(5).foreach(println)
-
-    rel_person_normal.show(5)
-
-    rel_person_normal.take(5).foreach(println)
-
-    val rel_person: Dataset[Row] = rel_person_zh.union(rel_person_inverted).union(rel_person_normal)
-    rel_person.createOrReplaceTempView("rel_person")
-
-
-    spark.sql("insert into table dwb.wb_person_nsfc_sts_academician_csai_ms_rel select person_id_ms,person_id,source from rel_person")
+    PersonUtil.getDeliverRelation (spark,distinct_relation,person_fusion_relation).unionAll(person_fusion_relation.select("person_id_from","person_id_to"))
+      .repartition(2).write.format("hive").mode("overwrite").insertInto("dwb.wb_person_nsfc_sts_academician_csai_ms_rel")
 
     spark.sql(
       """
-        | insert into table dwb.wb_person_nsfc_sts_academician_csai_ms
-        | select
-        |     a.person_id
-        |    ,zh_name
-        |    ,en_name
-        |    ,nation
-        |    ,birthday
-        |    ,birthplace
-        |    ,org_id
-        |    ,org_name
-        |    ,dept_name
-        |    ,idcard
-        |    ,officerno
-        |    ,passportno
-        |    ,hkidno
-        |    ,twidno
-        |    ,position
-        |    ,prof_title
-        |    ,prof_title_id
-        |    ,researcharea
-        |    ,mobile
-        |    ,tel
-        |    ,email
-        |    ,fax
-        |    ,backupemail
-        |    ,address
-        |    ,nationality
-        |    ,province
-        |    ,city
-        |    ,postcode
-        |    ,avatar_url
-        |    ,degree
-        |    ,degreeyear
-        |    ,degreecountry
-        |    ,major
-        |    ,brief_description
-        |    ,if(b.source is null ,a.source,b.source) as source
-        | from dwb.wb_person_nsfc_sts_academician_csai a
-        | left join rel_person b
-        | on a.person_id = b.person_id
-      """.stripMargin)
-
-    val person_ms_not_exists = spark.sql("select * from dwd.wd_person_ms a where not exists (select * from rel_person b where a.person_id=b.person_id_ms)")
-    person_ms_not_exists.createOrReplaceTempView("person_ms_not_exists")
-
-    spark.sql(
-      """
-        |insert into table dwb.wb_person_nsfc_sts_academician_csai_ms
         |select
-        |  person_id
-        | ,zh_name
-        | ,null as en_name
-        | ,null as gender
-        | ,null as nation
-        | ,null as birthday
-        | ,null as birthplace
-        | ,org_id
-        | ,org_name
-        | ,null as dept_name
-        | ,null as idcard
-        | ,null as officerno
-        | ,null as passportno
-        | ,null as hkidno
-        | ,null as twidno
-        | ,null as position
-        | ,null as prof_title
-        | ,null as prof_title_id
-        | ,null as researcharea
-        | ,null as mobile
-        | ,null as tel
-        | ,null as email
-        | ,null as fax
-        | ,null as backupemail
-        | ,null as address
-        | ,null as nationality
-        | ,null as province
-        | ,null as city
-        | ,null as postcode
-        | ,null as avatar_url
-        | ,null as degree
-        | ,null as degreeyear
-        | ,null as degreecountry
-        | ,null as major
-        | ,null as brief_description
-        | ,source
-        |from person_ms_not_exists
-      """.stripMargin)
+        |person_id
+        |,zh_name
+        |,en_name
+        |,gender
+        |,nation
+        |,birthday
+        |,birthplace
+        |,org_id
+        |,org_name
+        |,dept_name
+        |,id_card
+        |,officer_no
+        |,passport_no
+        |,hkid_no
+        |,twid_no
+        |,position
+        |,prof_title
+        |,prof_title_id
+        |,research_area
+        |,mobile
+        |,tel
+        |,email
+        |,fax
+        |,backup_email
+        |,address
+        |,nationality
+        |,province
+        |,city
+        |,postcode
+        |,avatar_url
+        |,degree
+        |,degree_year
+        |,degree_country
+        |,major
+        |,brief_description
+        |,if(b.source is not null, union_flow_source(b.source,flow_source,b.rule),flow_source  )as flow_source
+        |,a.source
+        |from person_nsfc_sts_academician_csai_ms a left join get_source b on a.person_id = b.person_id_to
+        |""".stripMargin).createOrReplaceTempView("person_get_source")
 
-
+    spark.sql(
+      """
+        |insert overwrite table dwb.wb_person_nsfc_sts_academician_csai_ms
+        |select a.*
+        |from person_get_source a left join  dwb.wb_person_nsfc_sts_academician_csai_ms_rel b on a.person_id = b.person_id_from where b.person_id_from is null
+        |""".stripMargin)
 
 
 

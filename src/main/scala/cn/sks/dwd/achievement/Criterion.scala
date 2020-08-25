@@ -34,9 +34,7 @@ object Criterion {
         | (select  achievement_id, person_id  from dwb.wb_product_all_person where product_type ='6') a  join  ods.o_csai_person_all b on a.person_id = b.person_id group by achievement_id
       """.stripMargin).createOrReplaceTempView("csai_criterion_authors")
 
-
-
-    val product_csai = spark.sql(
+    spark.sql(
       """
         |select
         | a.achievement_id
@@ -60,14 +58,14 @@ object Criterion {
         |,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_product_criterion_csai\"","," ,"\"id\"",":","\"",a.achievement_id,"\"","}") as flow_source
         |,'csai' as source
         |from ods.o_csai_criterion a left join csai_criterion_authors b on a.achievement_id  = b.achievement_id
-      """.stripMargin)
-
-    product_csai.repartition(10).createOrReplaceTempView("wd_product_criterion_csai")
-
+      """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_criterion_csai")
     //spark.sql("insert overwrite  table dwd.wd_product_criterion_csai  select * from wd_product_criterion_csai")
+
     AchievementUtil.getDataTrace(spark,"ods.o_csai_criterion","dwd.wd_product_criterion_csai")
     AchievementUtil.getDataTrace(spark,"dwb.wb_product_all_person","dwd.wd_product_criterion_csai")
-    val product_nsfc_person = spark.sql(
+
+
+    spark.sql(
       """
         |select
         | achievement_id
@@ -91,10 +89,9 @@ object Criterion {
         |,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_product_criterion_nsfc\"","," ,"\"id\"",":","\"",achievement_id,"\"","}") as flow_source
         |,'nsfc' as source
         |from ods.o_nsfc_product_criterion
-      """.stripMargin)
-
-    product_nsfc_person.repartition(1).createOrReplaceTempView("wd_product_criterion_nsfc")
+      """.stripMargin).repartition(1).createOrReplaceTempView("wd_product_criterion_nsfc")
     //spark.sql("insert overwrite  table dwd.wd_product_criterion_nsfc  select * from wd_product_criterion_nsfc")
+
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_criterion","dwd.wd_product_criterion_nsfc")
 
 

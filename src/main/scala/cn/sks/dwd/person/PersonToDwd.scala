@@ -2,6 +2,7 @@ package cn.sks.dwd.person
 
 import java.util.Date
 
+import cn.sks.util.CommonUtil
 import org.apache.spark.sql.SparkSession
 
 object PersonToDwd {
@@ -20,6 +21,15 @@ object PersonToDwd {
       .config("hive.metastore.uris","thrift://10.0.82.132:9083")
       .enableHiveSupport()
       .getOrCreate()
+
+
+    CommonUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_person_ms")
+    CommonUtil.getDataTrace(spark,"ods.o_arp_person","dwd.wd_person_arp")
+    CommonUtil.getDataTrace(spark,"ods.o_csai_person_academician","dwd.wd_person_academician")
+    CommonUtil.getDataTrace(spark,"ods.o_csai_person_all","dwd.wd_person_csai")
+    CommonUtil.getDataTrace(spark,"ods.wd_person_nsfc","dwd.o_nsfc_person")
+
+
 
     println("------ms-------")
     spark.sql(
@@ -60,7 +70,6 @@ object PersonToDwd {
     println("-----------academician--------------")
     spark.sql(
       """
-        |insert into table dwd.wd_person_academician
         |select
         |   a.person_id
         |  ,a.zh_name
@@ -82,7 +91,7 @@ object PersonToDwd {
         |from ods.o_csai_person_academician a
         |left join ods.o_csai_person_all b
         |on a.person_id=b.person_id
-      """.stripMargin)
+      """.stripMargin).dropDuplicates("person_id").repartition(2).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_academician")
 
     // 科协的人员（排除两院院士）
     println("-----------csai--------------")

@@ -87,6 +87,7 @@ object PaperJournal {
         |from ods.o_orcid_product_journal a left join orcid_authors b on a.works_uuid  = b.achievement_id
       """.stripMargin).repartition(10).createOrReplaceTempView("product_orcid")
     //spark.sql("insert overwrite table dwd.wd_product_journal_orcid  select * from product_orcid")
+
     AchievementUtil.getDataTrace(spark,"ods.o_orcid_product_journal","dwd.wd_product_journal_orcid")
     AchievementUtil.getDataTrace(spark,"ods.o_orcid_product_journal_conference_author","dwd.wd_product_journal_orcid")
 
@@ -144,6 +145,7 @@ object PaperJournal {
         |from (select * from ods.o_ms_product_all where paper_type='1') a left join ms_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).repartition(30).createOrReplaceTempView("product_ms")
       //spark.sql("insert overwrite table dwd.wd_product_journal_ms  select * from product_ms")
+
     AchievementUtil.getDataTrace(spark,"ods.o_ms_product_all","dwd.wd_product_journal_ms")
     AchievementUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_product_journal_ms")
 
@@ -200,11 +202,12 @@ object PaperJournal {
         |from ods.o_csai_product_journal a left join csai_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).createOrReplaceTempView("product_csai")
      //spark.sql("insert overwrite table dwd.wd_product_journal_csai  select * from product_csai")
+
     AchievementUtil.getDataTrace(spark,"ods.o_csai_product_journal","dwd.wd_product_journal_csai")
     AchievementUtil.getDataTrace(spark,"ods.o_csai_product_journal_author","dwd.wd_product_journal_csai")
 
     //o_product_business_journal_nsfc
-    val product_nsfc_project = spark.sql(
+    spark.sql(
       """
         |select
         | achievement_id
@@ -250,15 +253,14 @@ object PaperJournal {
         |,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_product_journal_project_nsfc\"","," ,"\"id\"",":","\"",achievement_id,"\"","}") as flow_source
         |,'nsfc' as source
         |from ods.o_nsfc_project_journal
-      """.stripMargin)
+      """.stripMargin).repartition(10).createOrReplaceTempView("o_product_business_journal_nsfc")
 
-
-    product_nsfc_project.repartition(10).createOrReplaceTempView("o_product_business_journal_nsfc")
     //spark.sql("insert overwrite table dwd.wd_product_journal_project_nsfc  select * from o_product_business_journal_nsfc")
+
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_project_journal","dwd.wd_product_journal_project_nsfc")
 
     //npd_paper
-    val product_nsfc_npd = spark.sql(
+    spark.sql(
       """
         |select
         | achievement_id
@@ -304,12 +306,13 @@ object PaperJournal {
         |,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_product_journal_npd_nsfc\"","," ,"\"id\"",":","\"",achievement_id,"\"","}") as flow_source
         |,'nsfc' as source
         |from ods.o_nsfc_npd_journal
-      """.stripMargin)
+      """.stripMargin).repartition(10).createOrReplaceTempView("o_product_business_journal_npd_nsfc")
 
-    product_nsfc_npd.repartition(10).createOrReplaceTempView("o_product_business_journal_npd_nsfc")
     //spark.sql("insert overwrite table dwd.wd_product_journal_npd_nsfc  select * from o_product_business_journal_npd_nsfc")
+
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_npd_journal","dwd.wd_product_journal_npd_nsfc")
-    val product_nsfc_person = spark.sql(
+
+    spark.sql(
       """
         |select
         | achievement_id
@@ -355,10 +358,9 @@ object PaperJournal {
         |,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_product_journal_nsfc\"","," ,"\"id\"",":","\"",achievement_id,"\"","}") as flow_source
         |,'nsfc' as source
         |from ods.o_nsfc_product_journal
-      """.stripMargin)
-
-    product_nsfc_person.createOrReplaceTempView("o_product_journal_nsfc")
+      """.stripMargin).createOrReplaceTempView("o_product_journal_nsfc")
     //spark.sql("insert overwrite table dwd.wd_product_journal_nsfc  select * from o_product_journal_nsfc")
+
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_journal","dwd.wd_product_journal_nsfc")
 
 

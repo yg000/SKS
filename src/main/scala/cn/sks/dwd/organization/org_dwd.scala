@@ -2,8 +2,7 @@ package cn.sks.dwd.organization
 
 import cn.sks.BaiduTranslate.baidu.TransApi
 import org.apache.spark.sql.SparkSession
-import cn.sks.util.{DefineUDF,NameToPinyinUtil}
-import cn.sks.util.OrganizationUtil
+import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil, OrganizationUtil}
 object org_dwd {
 
   val spark = SparkSession.builder()
@@ -45,6 +44,7 @@ object org_dwd {
     OrganizationUtil.dropDuplicates(spark,spark.read.table("ods.o_manual_organization_zky_inst"),"inst_name","id").createOrReplaceTempView("manual_organization_zky_inst")
     OrganizationUtil.dropDuplicates(spark,spark.read.table("ods.o_manual_organization_sts"),"org_name","registration_date").createOrReplaceTempView("manual_organization_sts")
     OrganizationUtil.dropDuplicates(spark,spark.read.table("ods.o_manual_organization_grid"),"org_name","established").createOrReplaceTempView("manual_organization_grid")
+
 
 
 //    spark.sql(    """

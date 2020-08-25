@@ -1,31 +1,29 @@
 package cn.sks.util
 
 import java.util
-
 import org.apache.spark.sql.{DataFrame, SparkSession}
+
 import scala.collection.mutable.ArrayBuffer
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import me.xdrop.fuzzywuzzy.ratios.PartialRatio
 
 object OrganizationUtil {
 
-  val spark = SparkSession.builder()
-    .master("local[1]")
-    .appName("product_npd")
-    .config("spark.deploy.mode","client")
-    .config("spark.cores.max", "8")
-    .config("hive.metastore.uris","thrift://10.0.82.132:9083")
-    .config("spark.sql.shuffle.partitions","10")
-    .enableHiveSupport()
-    .getOrCreate()
+  def dropDuplicates(spark:SparkSession,df:DataFrame,col:String,order_by_col:String):DataFrame= {
+    spark.sqlContext.udf.register("clean_fusion",(str:String) =>{
+      DefineUDF.clean_fusion(str)
+    })
+    df.createOrReplaceTempView("mid_tb")
+    spark.sql(s"""
+                |select  * from (select * ,row_number()over(partition by clean_fusion($col) order by $order_by_col desc) as tid from mid_tb )a where tid = 1
+                |""".stripMargin)
+  }
 
-  spark.sqlContext.udf.register("transform_name",(str:String) =>{
-    str.replace("中科院","中国科学院").replace("社科院","社会科学院").replace("国网","国家电网")
-      .replace("市","").replace("省","").replace("自治区","").replace("县","")
-      .replace("有限","").replace("责任","").replace("股份","").replace("集团","")
-  })
+
 
   def getStandardOrganization(spark:SparkSession):DataFrame= {
+
+
       spark.sql(
         """
           |select * from dwb.wb_organization
@@ -52,6 +50,12 @@ object OrganizationUtil {
   }
 
   def getFuzzyMatchOrgName(spark:SparkSession,df:DataFrame)= {
+
+    spark.sqlContext.udf.register("transform_name",(str:String) =>{
+      str.replace("中科院","中国科学院").replace("社科院","社会科学院").replace("国网","国家电网")
+        .replace("市","").replace("省","").replace("自治区","").replace("县","")
+        .replace("有限","").replace("责任","").replace("股份","").replace("集团","")
+    })
 
     df.createOrReplaceTempView("match_tb")
     val broadData =

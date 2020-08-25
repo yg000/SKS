@@ -3,17 +3,100 @@ package cn.sks.util
 import java.util.regex.{Matcher, Pattern}
 
 import cn.sks.BaiduTranslate.baidu.TransApi
+import cn.sks.ods.ms.Test02.data2MySQL
 import com.google.gson.{JsonObject, JsonParser}
-object DefineUDF {
+import org.json.JSONObject
 
+import scala.collection.mutable.ArrayBuffer
+object DefineUDF {
+  def transformEnglish(str:String): String = {
+
+    var APP_ID: String ="20200608000489509"
+    var SECURITY_KEY: String ="W0Aid0W8krDd0z79vn1_"
+    if(Math.floor(Math.random()*2) ==0){
+      APP_ID ="20200608000489509"
+      SECURITY_KEY ="W0Aid0W8krDd0z79vn1_"
+    }else{
+      APP_ID ="20200617000497648"
+      SECURITY_KEY ="AWuX5fymN1X61Bfxkxi4"
+    }
+
+    val api = new TransApi(APP_ID, SECURITY_KEY)
+    try {
+      val query = str
+      var i = 0
+      var jsonString = "{\"error_code\":\"54003\",\"error_msg\":\"Invalid Access Limit\"}"
+      while (jsonString =="{\"error_code\":\"54003\",\"error_msg\":\"Invalid Access Limit\"}") {
+        jsonString = api.getTransResult(query, "zh", "en")
+        i += 1
+        if(i>6){
+          jsonString = ""
+        }
+      }
+      val json = new JSONObject(jsonString.toString)
+      val json0 = new JSONObject(json.get("trans_result").toString.replace("[", "").replace("]", ""))
+      System.out.println(jsonString)
+      json0.get("dst").toString
+    } catch {
+      case e:Exception=>null
+    }
+  }
+
+  def transformChinese(str:String): String = {
+
+    var APP_ID: String ="20200608000489509"
+    var SECURITY_KEY: String ="W0Aid0W8krDd0z79vn1_"
+    if(Math.floor(Math.random()*2) ==0){
+      APP_ID ="20200608000489509"
+      SECURITY_KEY ="W0Aid0W8krDd0z79vn1_"
+    }else{
+      APP_ID ="20200617000497648"
+      SECURITY_KEY ="AWuX5fymN1X61Bfxkxi4"
+    }
+
+
+    val api = new TransApi(APP_ID, SECURITY_KEY)
+    try {
+      val query = str
+      var i = 0
+      var jsonString = "{\"error_code\":\"54003\",\"error_msg\":\"Invalid Access Limit\"}"
+      while (jsonString =="{\"error_code\":\"54003\",\"error_msg\":\"Invalid Access Limit\"}") {
+        jsonString = api.getTransResult(query, "en", "zh")
+        i += 1
+        if(i>6){
+          jsonString = ""
+        }
+      }
+      val json = new JSONObject(jsonString.toString)
+      val json0 = new JSONObject(json.get("trans_result").toString.replace("[", "").replace("]", ""))
+      System.out.println(jsonString)
+      json0.get("dst").toString
+    } catch {
+      case e:Exception=>null
+    }
+  }
+
+  def unionFlowSource(originFlowSource:String,targetFlowSource:String,rule:String):String={
+    val str1= "{\"from\":["
+    val str2= "],\"to\":"
+    val str3= ",\"rule\":\""
+    val str4= "\"}"
+    //val rule = "name+title"
+
+    str1 + originFlowSource + str2 + targetFlowSource + str3 + rule + str4
+  }
   // 判断是否包含中文
   def isContainChinese(str:String): Boolean ={
+    try{
     val pattern: Pattern = Pattern.compile("[\u4e00-\u9fa5]")
     val m: Matcher = pattern.matcher(str)
     if (m.find()) {
      return true
     }
      false
+    }catch {
+      case ex:NullPointerException=>false
+    }
   }
   // 判断是否包含英文
   def isContainEnglish(str:String): Boolean ={

@@ -235,3 +235,29 @@ CREATE TABLE `dwb.wb_organization_add`(
   `district` string,
   `zipcode` string,
   `source` string) PARTITIONED BY  (flag string) stored as orc;
+
+CREATE TABLE `dwb.wb_person_add`(
+  `person_id` string,
+  `name` string,
+  `org_name` string) PARTITIONED BY  (flag string) stored as orc;
+
+
+
+  CREATE TABLE `dm.dm_neo4j_experience_study_partition`(
+  `person_id` string,
+  `org_id` string,
+  `start_date` string,
+  `end_date` string,
+  `profession` string,
+  `degree` string,
+  `country` string,
+  `award_year` string,
+  `advisor` string,
+  `source` string) PARTITIONED BY  (flag string) stored as orc;
+
+
+  set hive.exec.dynamici.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+insert overwrite table dm.dm_neo4j_experience_study_partition
+partition(flag)
+select *,FLOOR(RAND() * 10) from  dm.dm_neo4j_experience_study;

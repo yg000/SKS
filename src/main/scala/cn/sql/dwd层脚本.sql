@@ -1,3 +1,4 @@
+ALTER TABLE dwb.`wb_product_criterion_csai_nsfc` CHANGE achivement_id  achievement_id STRING;
 --会议论文
 drop table dwd.`wd_product_conference_orcid`;
 CREATE TABLE dwd.`wd_product_conference_orcid`(
@@ -588,7 +589,7 @@ drop table dwd.`wd_product_patent_csai`;
 CREATE TABLE `dwd.wd_product_patent_csai`(
   `achievement_id` string,
   `chinese_title` string,
-  `englisth_title` string,
+  `english_title` string,
   `abstract` string,
   `requirement` string,
   `doi` string,
@@ -634,7 +635,7 @@ drop table dwd.`wd_product_patent_nsfc`;
 CREATE TABLE `dwd.wd_product_patent_nsfc`(
   `achievement_id` string,
   `chinese_title` string,
-  `englisth_title` string,
+  `english_title` string,
   `abstract` string,
   `requirement` string,
   `doi` string,
@@ -680,7 +681,7 @@ drop table dwd.`wd_product_patent_project_nsfc`;
 CREATE TABLE dwd.`wd_product_patent_project_nsfc`(
   `achievement_id` string,
   `chinese_title` string,
-  `englisth_title` string,
+  `english_title` string,
   `abstract` string,
   `requirement` string,
   `doi` string,
@@ -726,7 +727,7 @@ drop table dwd.`wd_product_patent_npd_nsfc`;
 CREATE TABLE dwd.`wd_product_patent_npd_nsfc`(
   `achievement_id` string,
   `chinese_title` string,
-  `englisth_title` string,
+  `english_title` string,
   `abstract` string,
   `requirement` string,
   `doi` string,
@@ -772,7 +773,7 @@ drop table dwd.`wd_product_patent_ms`;
 CREATE TABLE dwd.`wd_product_patent_ms`(
   `achievement_id` string,
   `chinese_title` string,
-  `englisth_title` string,
+  `english_title` string,
   `abstract` string,
   `requirement` string,
   `doi` string,
@@ -823,7 +824,7 @@ drop table `dwd.wd_product_criterion_csai`;
 CREATE TABLE `dwd.wd_product_criterion_csai`(
   `achievement_id` string,
   `chinese_title` string,
-  `englisth_title` string,
+  `english_title` string,
   `status` string,
   `publish_date` string,
   `implement_date` string,
@@ -848,7 +849,7 @@ CREATE TABLE `dwd.wd_product_criterion_csai`(
   CREATE TABLE dwd.`wd_product_criterion_nsfc`(
   `achievement_id` string,
   `chinese_title` string,
-  `englisth_title` string,
+  `english_title` string,
   `status` string,
   `publish_date` string,
   `implement_date` string,
@@ -1080,15 +1081,15 @@ create table wd_product_person_ext_csai_1(person_id string, achievement_id strin
 row format delimited fields terminated by '☔' stored as orc;
 
 
-insert into table dwd.wd_product_person_ext_csai
+insert overwrite table dwd.wd_product_person_ext_csai
 select
  b.person_id
 ,a.achievement_id as achievement_id
 ,"6" as product_type
 ,b.person_name as zh_name
 ,null as en_name
-,a.chinese_title as zh_title
-,a.english_title as en_title
+,a.chinese_name as zh_title
+,a.english_name as en_title
 ,'csai' as source
 from o_csai_criterion a join o_csai_criterion_author b on a.achievement_id=b.achivement_id
 union
@@ -1098,7 +1099,7 @@ b.person_id
 ,"4" as product_type
 ,b.person_name as zh_name
 ,null as en_name
-,a.chinese_title as zh_title
+,a.chinese_name as zh_title
 ,null as en_title
 ,'csai' as source
 from o_csai_product_monograph a join o_csai_product_monograph_author b on a.achievement_id=b.achievement_id
@@ -1109,7 +1110,7 @@ select
 ,"1" as product_type
 ,b.person_name as zh_name
 ,null as en_name
-,a.chinese_title as zh_title
+,a.chinese_name as zh_title
 ,null as en_title
 ,'csai'  as source
 from o_csai_product_journal a join o_csai_product_journal_author b on a.achievement_id=b.achivement_id
@@ -1120,9 +1121,9 @@ select
 ,"5" as product_type
 ,b.person_name as zh_name
 ,null as en_name
-,a.chinese_title as zh_title
+,a.chinese_name as zh_title
 ,null as en_title
-,'csai' as source 
+,'csai' as source
 from o_csai_product_patent a join o_csai_product_patent_inventor b on a.achievement_id=b.achievement_id
 union
 select
@@ -1131,7 +1132,7 @@ select
 ,"3" as product_type
 ,b.person_name as zh_name
 ,null as en_name
-,a.chinese_title as zh_title
+,a.chinese_name as zh_title
 ,null as en_title
 ,'csai' as source
 from o_csai_reward_project a join o_csai_reward_person b on a.achievement_id=b.achievement_id
@@ -1146,14 +1147,14 @@ when '3' then '2'
 when '4' then '4'
 when '5' then '4'
 when '2' then '5'
-else '8' 
+else '8'
 end as paper_type
 ,b.person_name as zh_name
 ,null as en_name
-,a.english_title as zh_title
+,a.english_name as zh_title
 ,null as en_title
 ,'ms' as source
-from o_ms_product_all a join o_ms_product_author b on a.achievement_id=b.achivement_id
+from o_ms_product_all a join o_ms_product_author b on a.achievement_id=b.achivement_id;
 
 
 

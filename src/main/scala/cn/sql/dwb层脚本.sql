@@ -1,3 +1,50 @@
+
+
+drop table dwb.wb_person_subject_tmp;
+drop table dwb.wb_person_subject;
+CREATE TABLE if not exists dwb.`wb_person_subject`(
+  `person_id` string,
+  `one_rank_id` string,
+  `one_rank_no` string,
+  `one_rank_name` string,
+  `two_rank_id` string,
+  `two_rank_no` string,
+  `two_rank_name` string,
+  `one_rank_count` string,
+  `two_rank_count` string)stored as orc;
+
+
+drop table dwb.wb_product_conference_ms_nsfc_orcid_rel;
+drop table dwb.wb_product_conference_ms_nsfc_rel;
+drop table dwb.wb_product_criterion_csai_nsfc_rel		;
+drop table dwb.wb_product_journal_csai_nsfc_ms_orcid_rel;
+drop table dwb.wb_product_journal_csai_nsfc_ms_rel		;
+drop table dwb.wb_product_journal_csai_nsfc_rel			;
+drop table dwb.wb_product_monograph_csai_nsfc_ms_rel	;
+drop table dwb.wb_product_monograph_csai_nsfc_rel		;
+drop table dwb.wb_product_patent_csai_nsfc_ms_rel		;
+drop table dwb.wb_product_patent_csai_nsfc_rel			;
+
+CREATE TABLE if not exists dwb.wb_product_criterion_csai_nsfc_rel(
+  `achievement_id_from` string,
+  `achievement_id_to` string,
+  `product_type` string,
+  `flow_source` string
+  );
+CREATE TABLE if not exists dwb.wb_product_conference_ms_nsfc_orcid_rel LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_conference_ms_nsfc_rel          LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_criterion_csai_nsfc_rel		  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_journal_csai_nsfc_ms_orcid_rel  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_journal_csai_nsfc_ms_rel		  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_journal_csai_nsfc_rel			  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_monograph_csai_nsfc_ms_rel	  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_monograph_csai_nsfc_rel		  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_patent_csai_nsfc_ms_rel		  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+CREATE TABLE if not exists dwb.wb_product_patent_csai_nsfc_rel			  LIKE dwb.wb_product_criterion_csai_nsfc_rel;
+
+
+
+
 ALTER TABLE dwb.`wb_product_criterion_csai_nsfc` CHANGE achivement_id  achievement_id STRING;
 
 //conference

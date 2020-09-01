@@ -1,6 +1,6 @@
 package cn.sks.dwb.organization
 
-import cn.sks.dm.organization.org_dm.spark
+import cn.sks.dm.organization.OrganizationDm.spark
 import org.apache.spark.sql.SparkSession
 import cn.sks.util.{AchievementUtil, BuildOrgIDUtil, DefineUDF, OrganizationUtil}
 
@@ -27,10 +27,6 @@ object org_dwb {
   })
 
   def main(args: Array[String]): Unit = {
-    AchievementUtil.getDataTrace(spark,"dwd.wd_organization_manual","dwb.wb_organization_manual_sts")
-    AchievementUtil.getDataTrace(spark,"dwd.wd_organization_sts","dwb.wb_organization_manual_sts")
-    AchievementUtil.getDataTrace(spark,"dwd.wd_organization_nsfc","dwb.wb_organization_manual_sts_nsfc")
-    AchievementUtil.getDataTrace(spark,"dwb.wb_organization_manual_sts","dwb.wb_organization_manual_sts_nsfc")
 
     spark.sql("""
                 |select  pinyin,split(merger_name,',')[1] as province,short_name,name  from ods.o_const_dictionary_china_region where level_type in('1')

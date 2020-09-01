@@ -7,7 +7,7 @@ object PersonFusionMs {
   def main(args: Array[String]): Unit = {
 
     val spark = SparkSession.builder()
-      //.master("local[40]")
+      .master("local[30]")
       .appName("PersonFusionMs")
       .config("spark.local.dir", "/data/tmp")
       .config("hive.metastore.uris","thrift://10.0.82.132:9083")
@@ -32,20 +32,18 @@ object PersonFusionMs {
     person_from_distinct_pinyin.createOrReplaceTempView("person_from_distinct_pinyin")
 
     val person_from_distinct_with_title  = PersonUtil.getAddTitle(spark,person_from_distinct_pinyin,"dwd.wd_product_person_ext_csai")
-    person_from_distinct_with_title.printSchema()
-    println(person_from_distinct_with_title.count())
 
-    val person_from_distinct_rule1_rel = PersonUtil.getDistinctRelationSecond(spark,person_from_distinct_with_title.select("person_id","clean_title","en_name_normal"),"clean_title","en_name_normal","").dropDuplicates("person_id_from")
+    val person_from_distinct_rule1_rel = PersonUtil.getDistinctRelationSecond(spark,person_from_distinct_with_title.select("person_id","clean_title","en_name_normal"),"clean_title","en_name_normal","")
     val person_from_distinct_rule1 = PersonUtil.getWithOut(spark,person_from_distinct_with_title,person_from_distinct_rule1_rel)
-    val person_from_distinct_rule2_rel = PersonUtil.getDistinctRelationSecond(spark,person_from_distinct_with_title.select("person_id","clean_title","en_name_inverted"),"clean_title","en_name_inverted","").dropDuplicates("person_id_from")
+    val person_from_distinct_rule2_rel = PersonUtil.getDistinctRelationSecond(spark,person_from_distinct_rule1.select("person_id","clean_title","en_name_inverted"),"clean_title","en_name_inverted","").cache()
     val person_from_distinct_rule2 = PersonUtil.getWithOut(spark,person_from_distinct_rule1,person_from_distinct_rule2_rel)
 
 
     val distinct_relation = PersonUtil.getDeliverRelation(spark,person_from_distinct_rule1_rel,person_from_distinct_rule2_rel).union(person_from_distinct_rule2_rel)
 
-    val person_to_with_title  = PersonUtil.getAddTitle(spark,NameToPinyinUtil.nameToPinyin(spark, person_to, "zh_name"),"wd_product_person")
+    val person_to_with_title  = PersonUtil.getAddTitle(spark,NameToPinyinUtil.nameToPinyin(spark, person_to, "zh_name"),"wd_product_person").cache()
 
-    val person_from_with_title  = person_from_distinct_rule2
+    val person_from_with_title  = person_from_distinct_rule2.cache()
 
     val person_fusion_1 = PersonUtil.getComparisonTable(spark,person_to_with_title,person_from_with_title,"en_name_normal","clean_title","","zh_name+title")
     println(person_fusion_1.count())
@@ -53,14 +51,14 @@ object PersonFusionMs {
     val person_fusion_2 = PersonUtil.getComparisonTable(spark,person_to_with_title,person_from_with_title,"en_name_inverted","clean_title","","zh_name+title")
     println(person_fusion_2.count())
 
-    val person_fusion_relation = person_fusion_1.unionAll(person_fusion_2).dropDuplicates("person_id_from")
+    val person_fusion_relation = person_fusion_1.unionAll(person_fusion_2).dropDuplicates("person_id_from").cache()
     person_fusion_relation.createOrReplaceTempView("comparison_table")
     PersonUtil.getSource(spark,"comparison_table").createOrReplaceTempView("get_source")
 
     person_to.unionAll(person_from).createOrReplaceTempView("person_nsfc_sts_academician_csai_ms")
 
     PersonUtil.getDeliverRelation (spark,distinct_relation,person_fusion_relation).unionAll(person_fusion_relation.select("person_id_from","person_id_to"))
-      .repartition(2).write.format("hive").mode("overwrite").insertInto("dwb.wb_person_nsfc_sts_academician_csai_ms_rel")
+      .repartition(100).write.format("hive").mode("overwrite").insertInto("dwb.wb_person_nsfc_sts_academician_csai_ms_rel")
 
     spark.sql(
       """

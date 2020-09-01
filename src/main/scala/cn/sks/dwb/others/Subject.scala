@@ -2,7 +2,7 @@ package cn.sks.dwb.others
 
 import org.apache.spark.sql.SparkSession
 
-object SubjectPersonAndProjuctNSFC {
+object Subject {
   def main(args: Array[String]): Unit = {
 
 

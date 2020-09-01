@@ -2,7 +2,7 @@ package cn.sks.dwb.relation
 
 import org.apache.spark.sql.SparkSession
 
-object RelPersonSubject {
+object RelPerson {
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -21,22 +21,20 @@ object RelPersonSubject {
 
 
 
-
+    //person_subject
     val product_person= spark.sql(
       """
-        |select * from dwb.wb_product_person
+        |select * from dwb.wb_relation_product_person
       """.stripMargin)
     product_person.createOrReplaceTempView("product_person")
 
     val product_subject= spark.sql(
       """
-        |select * from dwb.wb_product_all_subject
+        |select * from dwb.wb_relation_product_subject
       """.stripMargin)
     product_subject.createOrReplaceTempView("product_subject")
 
     println(product_subject.count())
-
-
 
 //    1 1170 4520
     val person_subject =spark.sql(
@@ -60,14 +58,14 @@ object RelPersonSubject {
 
     spark.sql(
       """
-        |create table dwb.wb_person_subject_tmp as
         |select a.* ,b.one_rank_count,c.two_rank_count
         |from person_subject a
         |left join one_rank_count b on a.person_id = b.person_id and a.one_rank_id = b.one_rank_id
         |left join two_rank_count c on a.person_id = c.person_id and a.two_rank_id = c.two_rank_id
         |""".stripMargin)
+      .dropDuplicates("person_id","two_rank_id")
+      .repartition(30).write.format("hive").mode("overwrite").insertInto("dwb.wb_person_subject")
 
-    //spark.sql("insert into table dwb.wb_person_subject  select * from person_subject")
 
 
 

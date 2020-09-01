@@ -17,26 +17,31 @@ object JournalAndConference {
       .getOrCreate()
     spark.sparkContext.setLogLevel("warn")
 
-    val product_id = spark.sql("select achievement_id as id,original_achievement_id as achievement_id from dwb.wb_product_all_rel")
-    val paper_journal = spark.sql("select achievement_id,journal_id,journal_name from ods.o_csai_product_journal_relationship_journal")
 
+
+    val product_id = spark.sql("select achievement_id as id,achievement_id_origin as achievement_id from dwb.wb_product_rel")
+
+    //journal
+
+    val paper_journal = spark.sql("select achievement_id,journal_id,journal_name from ods.o_csai_product_journal_relationship_journal")
     paper_journal.join(product_id, Seq("achievement_id"), "left")
-      .createOrReplaceTempView("keyword")
+      .createOrReplaceTempView("journal")
 
 
     spark.sql(
       """
         |select
-        |if(id is null,achievement_id,id) as achievement_id,
+        |ifnull(id,achievement_id) as achievement_id,
         |journal_id,
         |journal_name
-        |from keyword
+        |from journal
       """.stripMargin).dropDuplicates()
-      .repartition(50).createOrReplaceTempView("paper_journal")
+      .repartition(40).createOrReplaceTempView("product_journal_rel_journal")
 
 
-    spark.sql("insert overwrite table dwb.wb_product_journal_rel_journal select * from paper_journal")
+    spark.sql("insert overwrite table dwb.wb_product_journal_rel_journal select * from product_journal_rel_journal")
 
+    //conference
    val conference= spark.sql("select achievement_id,md5(conference) as conference_id,conference,conference_type,conference_address,organization,start_date,end_date,country,city from dwb.wb_product_conference_ms_nsfc_orcid where conference is not null and conference!='' ")
 
 

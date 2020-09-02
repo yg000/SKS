@@ -1,8 +1,9 @@
 package cn.sks.dm.achievement
 
+import cn.sks.util.AchievementUtil
 import org.apache.spark.sql.SparkSession
 
-object Achievement {
+object Product {
   val spark: SparkSession = SparkSession.builder()
     .master("local[15]")
     .config("spark.deploy.mode", "clent")
@@ -20,6 +21,27 @@ object Achievement {
 
   def main(args: Array[String]): Unit = {
 
+//
+//    spark.read.table("dm.dm_neo4j_product_journal").select("id","paper_type")
+//      .unionAll(spark.read.table("dm.dm_neo4j_product_conference").select("id","paper_type"))
+//      .unionAll(spark.read.table("dm.dm_neo4j_product_patent").select("id","paper_type"))
+//      .unionAll(spark.read.table("dm.dm_neo4j_product_monograph").select("id","paper_type"))
+//      .unionAll(spark.read.table("dm.dm_neo4j_product_criterion").select("id","paper_type")).createOrReplaceTempView("tmp")
+//
+//    spark.sql(
+//      """
+//        |select * from tmp where id = '81027a85174b4691199a3fd2f931399e'
+//        |""".stripMargin)//.show()
+//
+//    spark.sql(
+//      """
+//        |select * from dwb.wb_product_journal_csai_nsfc_ms_orcid where achievement_id = '81027a85174b4691199a3fd2f931399e'
+//        |""".stripMargin).show(false)
+//    spark.sql(
+//      """
+//        |select * from dwb.wb_product_conference_ms_nsfc_orcid where achievement_id = '81027a85174b4691199a3fd2f931399e'
+//        |""".stripMargin).show(false)
+
     spark.sql(
       """
         |insert overwrite table dm.dm_neo4j_product_journal
@@ -32,12 +54,12 @@ object Achievement {
         |publish_date,
         |language,
         |includes,
-        |journal
+        |journal,
+        |flow_source,
+        |source
         | from dwb.wb_product_journal_csai_nsfc_ms_orcid
-      """.stripMargin).show()
+      """.stripMargin)
 
-
-    //spark.sql("insert overwrite table dm.dm_neo4j_product_journal select * from journal_person_re")
 
 
     //会议相关
@@ -54,12 +76,13 @@ object Achievement {
         |publish_date,
         |language,
         |include,
-        |conference
+        |conference,
+        |flow_source,
+        |source
         | from dwb.wb_product_conference_ms_nsfc_orcid
-      """.stripMargin).show()
+      """.stripMargin)
 
 
-    //spark.sql("insert overwrite table dm.dm_neo4j_product_conference select * from conference_person_re")
 
     spark.sql(
       """
@@ -71,11 +94,13 @@ object Achievement {
         |english_title as english_name,
         |inventor as  authors,
         |language,
-        |applicant
+        |applicant,
+        |flow_source,
+        |source
         | from dwb.wb_product_patent_csai_nsfc_ms
-      """.stripMargin).show()
+      """.stripMargin)
 
-    //spark.sql("insert overwrite table dm.dm_neo4j_product_patent select * from patent")
+
 
     spark.sql(
       """
@@ -88,11 +113,13 @@ object Achievement {
         |author as  authors,
         |language,
         |book_name,
-        |editor
+        |editor,
+        |flow_source,
+        |source
         | from dwb.wb_product_monograph_csai_nsfc_ms
-      """.stripMargin).show()
+      """.stripMargin)
 
-    //spark.sql("insert overwrite table dm.dm_neo4j_product_monograph select * from monograph")
+
 
     spark.sql(
       """
@@ -104,10 +131,15 @@ object Achievement {
         |english_title as english_name,
         |authors as  authors,
         |language,
-        |applicant
+        |applicant,
+        |flow_source,
+        |source
         | from dwb.wb_product_criterion_csai_nsfc
-      """.stripMargin).show()
+      """.stripMargin)
 
-    //spark.sql("insert overwrite table dm.dm_neo4j_product_criterion select * from criterion")
+
+    spark
+    
+    
   }
 }

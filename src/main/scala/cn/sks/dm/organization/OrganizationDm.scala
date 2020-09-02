@@ -1,8 +1,10 @@
 package cn.sks.dm.organization
 
+import cn.sks.dm.achievement.Product.spark
+import cn.sks.util.AchievementUtil
 import org.apache.spark.sql.SparkSession
 
-object org_dm {
+object OrganizationDm {
   val spark = SparkSession.builder()
     .master("local[2]")
     .appName("org_dm")
@@ -16,24 +18,12 @@ object org_dm {
 
   def main(args: Array[String]): Unit = {
 
-//    spark.sql("""
-//                |insert overwrite table dm.dm_neo4j_organization
-//                |   select org_id,
-//                |   org_name,
-//                |   en_name,
-//                |   alias,
-//                |   org_type,
-//                |   country,
-//                |   province,
-//                |   city from dwb.wb_organization
-//                |""".stripMargin)
-    spark.sql(
-      s"""
-         |create table if not exists dm.dm_neo4j_organization_add like dm.dm_neo4j_organization
-         |""".stripMargin)
+//    AchievementUtil.getDataTrace(spark,"dwb.wb_organization","dm.dm_neo4j_organization")
+//    AchievementUtil.getDataTrace(spark,"dwb.wb_organization_add","dm.dm_neo4j_organization_add")
+//    AchievementUtil.getDataTrace(spark,"dwb.dm_es_organization","dm.wb_organization")
 
     spark.sql("""
-                |insert overwrite table dm.dm_neo4j_organization_add
+                |insert overwrite table dm.dm_neo4j_organization
                 |   select org_id,
                 |   org_name,
                 |   en_name,
@@ -41,7 +31,22 @@ object org_dm {
                 |   org_type,
                 |   country,
                 |   province,
-                |   city from dwb.wb_organization_add
+                |   city,
+                |source from dwb.wb_organization
+                |""".stripMargin)
+
+
+    spark.sql("""
+                |insert into table dm.dm_neo4j_organization
+                |   select org_id,
+                |   org_name,
+                |   en_name,
+                |   alias,
+                |   org_type,
+                |   country,
+                |   province,
+                |   city,
+                |   source from dwb.wb_organization_add
                 |""".stripMargin)
 
 //    spark.sql("""

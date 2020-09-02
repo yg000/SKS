@@ -1,4 +1,4 @@
-package cn.sks.dm.achievement
+package cn.sks.dm.others
 
 import org.apache.spark.sql.SparkSession
 
@@ -19,44 +19,30 @@ object Entity {
   spark.sparkContext.setLogLevel("warn")
 
   def main(args: Array[String]): Unit = {
-    val conference = spark.read.table("dwb.wb_product_conference_ms_nsfc_orcid").select("achievement_id")
-
-    val criterion = spark.read.table("dwb.wb_product_criterion_csai_nsfc").select("achievement_id")
-
-    val journal = spark.read.table("dwb.wb_product_journal_csai_nsfc_ms_orcid").select("achievement_id")
-
-    val monograph = spark.read.table("dwb.wb_product_monograph_csai_nsfc_ms").select("achievement_id")
-
-    val patent = spark.read.table("dwb.wb_product_patent_csai_nsfc_ms").select("achievement_id")
-
-    val org_name = spark.sql("select org_id,org_name from dwb.wb_product_organization_all_tmp").dropDuplicates("org_id")
-
-
 
 
 
 
     //学会的主体表
-    spark.sql("select society_id as id,chinese_name,english_name,subject_category,address,governing_body,support_unit,unit_member,individual_member from ods.o_csai_society")
+    spark.sql("select society_id as id,chinese_name,null as english_name,subject_category,address,governing_body,support_unit,unit_member,individual_member from ods.o_csai_society")
       .repartition(1).createOrReplaceTempView("society")
     spark.sql("insert overwrite table dm.dm_neo4j_society select * from society")
 
-    spark.sql("select society_id,person_id from ods.o_csai_society_person").createOrReplaceTempView("society_person")
-
-    spark.sql("insert overwrite table dm.dm_neo4j_society_person select * from society_person")
-
-
 
     //领域常量表
-    spark.sql("select * from ods.o_csai_subject_constant").repartition(5).createOrReplaceTempView("subject")
+    spark.sql("select * from ods.o_csai_subject_constant").createOrReplaceTempView("subject")
     spark.sql("insert overwrite table dm.dm_neo4j_subject select * from subject")
 
     //关键词的常量表
-    spark.sql("select keywords_id as keyword_id ,zh_keywords as keyword from dwb.wb_keywords_nsfc_csai_all")
-      .repartition(40).createOrReplaceTempView("keyword")
-    spark.sql("insert overwrite table dm.dm_neo4j_keyword select * from keyword")
-
-
+    spark.sql(
+      """
+        |insert overwrite table dm.dm_neo4j_keyword
+        |select
+        |keyword_id,
+        |zh_keyword,
+        |en_keyword
+        |from dwb.wb_keyword
+        |""".stripMargin)
 
     //期刊常量表
     val constant_journal = spark.sql("select journal_id,chinese_name,english_name,language,organizer,fullimpact,compleximpact,publish_region from ods.o_csai_journal")
@@ -83,7 +69,7 @@ object Entity {
     spark.sql(
       """
         |insert overwrite table dm.dm_neo4j_journal
-        |select journal_id,
+        |select a.journal_id,
         |chinese_name,
         |english_name,
         |language,
@@ -96,15 +82,12 @@ object Entity {
 
 
 
-
-
-
     //会议的常量表
     val constant_conference = spark.sql("select conference_id,conference,organization as organizer from ods.o_const_conference")
 
     constant_conference.select("conference_id", "organizer").createOrReplaceTempView("organizer")
 
-   spark.sql(
+    spark.sql(
       """
         |select
         |conference_id,
@@ -124,10 +107,10 @@ object Entity {
     spark.sql(
       """
         |insert overwrite table dm.dm_neo4j_conference
-        |select conference_id,
+        |select a.conference_id,
         |conference,
         |org_names
-        |from  ods.o_const_conference a left join get_org_names b on a.journal_id = b.journal_id
+        |from  ods.o_const_conference a left join get_org_names b on a.conference_id = b.conference_id
         |""".stripMargin)
 
   }

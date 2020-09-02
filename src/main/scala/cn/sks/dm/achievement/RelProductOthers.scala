@@ -44,20 +44,7 @@ object RelProductOthers {
     //spark.sql("insert overwrite table dm.dm_neo4j_product_keyword_conference select * from conference_keyword")
 
 
-    //期刊对应得
-    val wb_product_journal_rel_journal = spark.sql("select achievement_id ,journal_id from dwb.wb_product_journal_rel_journal")
 
-    journal.join(wb_product_journal_rel_journal, Seq("achievement_id"))
-      .repartition(30).createOrReplaceTempView("product_journal_re")
-    // spark.sql("insert overwrite table dm.dm_neo4j_product_journal_rel_journal select * from product_journal_re")
-
-
-    //会议对应的
-    val wb_product_conference_rel_conference = spark.sql("select achievement_id,conference_id from dwb.wb_product_conference_rel_conference")
-
-    conference.select("achievement_id").join(wb_product_conference_rel_conference, Seq("achievement_id"))
-      .repartition(5).createOrReplaceTempView("product_conference_re")
-    //spark.sql("insert overwrite table dm.dm_neo4j_product_conference_rel_conference select * from product_conference_re")
 
 
   }

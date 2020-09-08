@@ -14,6 +14,32 @@ CREATE TABLE if not exists dwb.`wb_person_subject`(
   `two_rank_count` string)stored as orc;
 
 
+
+
+CREATE TABLE if not exists dwb.`wb_keyword_subject`(
+  `keyword_id` string,
+  `one_rank_id` string,
+  `one_rank_no` string,
+  `one_rank_name` string,
+  `two_rank_id` string,
+  `two_rank_no` string,
+  `two_rank_name` string)stored as orc;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 drop table dwb.wb_product_conference_ms_nsfc_orcid_rel;
 drop table dwb.wb_product_conference_ms_nsfc_rel;
 drop table dwb.wb_product_criterion_csai_nsfc_rel		;

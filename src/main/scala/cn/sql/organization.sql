@@ -261,3 +261,9 @@ set hive.exec.dynamic.partition.mode=nonstrict;
 insert overwrite table dm.dm_neo4j_experience_study_partition
 partition(flag)
 select *,FLOOR(RAND() * 10) from  dm.dm_neo4j_experience_study;
+
+
+CREATE TABLE `dm.dm_neo4j_person_advisor`(
+  `person_id` string,
+  `advisor_id` string,
+  `year` string) PARTITIONED BY  (flag string) stored as orc;

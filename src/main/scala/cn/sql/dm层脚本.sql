@@ -1,3 +1,5 @@
+
+drop table dm.`dm_neo4j_product_journal`;
 CREATE TABLE dm.`dm_neo4j_product_journal`(
   `id` string,
   `paper_type` string,
@@ -7,189 +9,336 @@ CREATE TABLE dm.`dm_neo4j_product_journal`(
   `publish_date` string,  
   `language` string, 
   `includes` string, 
-  `journal` string)
+  `journal` string,
+  flow_source string,
+  source string)
 row format delimited fields terminated by '☔' stored as orc;
 
-
-CREATE TABLE dm.`dm_neo4j_product_person_journal`(
-  `person_id` string,
-  `achievement_id` string)
-row format delimited fields terminated by '☔' stored as orc;	
-
+drop table dm.`dm_neo4j_product_conference`;
 CREATE TABLE dm.`dm_neo4j_product_conference`(
   `id` string,
   `paper_type` string,
-  `chinese_name` string, 
+  `chinese_name` string,
   `english_name` string,
   `authors` string,
-  `publish_date` string,  
-  `language` string, 
-  `includes` string, 
-  `conference` string)
+  `publish_date` string,
+  `language` string,
+  `includes` string,
+  `conference` string,
+  flow_source string,
+  source string)
 row format delimited fields terminated by '☔' stored as orc;
 
-
-CREATE TABLE dm.`dm_neo4j_product_person_conference`(
-  `person_id` string,
-  `achievement_id` string)
-row format delimited fields terminated by '☔' stored as orc;
-
-
+drop table dm.`dm_neo4j_product_patent`;
 CREATE TABLE dm.`dm_neo4j_product_patent`(
   `id` string,
-  `chinese_name` string, 
+  `paper_type` string,
+  `chinese_name` string,
   `english_name` string,
-  `authors` string,  
-  `language` string, 
-  `applicant` string)
+  `authors` string,
+  `language` string,
+  `applicant` string,
+  flow_source string,
+  source string)
 row format delimited fields terminated by '☔' stored as orc;
 
-
-CREATE TABLE dm.`dm_neo4j_product_person_patent`(
-  `person_id` string,
-  `achievement_id` string)
-row format delimited fields terminated by '☔' stored as orc;	
-
-
-
-
+drop table dm.`dm_neo4j_product_criterion`;
 CREATE TABLE dm.`dm_neo4j_product_criterion`(
   `id` string,
-  `chinese_name` string, 
+  `paper_type` string,
+  `chinese_name` string,
   `english_name` string,
-  `authors` string,  
-  `language` string, 
-  `applicant` string)
+  `authors` string,
+  `language` string,
+  `applicant` string,
+  flow_source string,
+  source string)
 row format delimited fields terminated by '☔' stored as orc;
 
 
-CREATE TABLE dm.`dm_neo4j_product_person_criterion`(
-  `person_id` string,
-  `achievement_id` string)
-row format delimited fields terminated by '☔' stored as orc;	
-
-
+drop table dm.`dm_neo4j_product_monograph`;
 CREATE TABLE dm.`dm_neo4j_product_monograph`(
   `id` string,
-  `chinese_name` string, 
+  `paper_type` string,
+  `chinese_name` string,
   `english_name` string,
-  `authors` string,  
-  `language` string, 
+  `authors` string,
+  `language` string,
   `book_name` string,
-  `editor` string)
+  `editor` string,
+  flow_source string,
+  source string)
 row format delimited fields terminated by '☔' stored as orc;
 
-
-CREATE TABLE dm.`dm_neo4j_product_person_monograph`(
-  `person_id` string,
-  `achievement_id` string)
-row format delimited fields terminated by '☔' stored as orc;	
-
-
-
-CREATE TABLE dm.`dm_neo4j_product_subject_journal`(
+drop table dm.`dm_neo4j_person`;
+CREATE TABLE `dm.dm_neo4j_person`(
   `id` string,
-  `one_rank_id` string,
-  `one_rank_no` string, 
-  `one_rank_name` string,
-  `two_rank_id` string,
-  `two_rank_no` string,  
-  `two_rank_name` string)
-row format delimited fields terminated by '☔' stored as orc;
+  `zh_name` string,
+  `en_name` string,
+  `gender` string,
+  `nation` string,
+  `birthday` string,
+  `birthplace` string,
+  `org_name` string,
+  `prof_title` string,
+  `nationality` string,
+  `province` string,
+  `city` string,
+  `degree` string,
+  flow_source string,
+  source string
+  )stored as orc;
 
-CREATE TABLE dm.`dm_neo4j_product_subject_conference`(
+
+
+CREATE TABLE `dm.dm_neo4j_project`(
+  `id` string COMMENT '唯一标识',
+  `zh_title` string COMMENT '项目中文名称',
+  `en_title` string COMMENT '项目英文名称',
+  `prj_no` string COMMENT '项目批准号',
+  `person_id` string COMMENT '项目负责人id',
+  `psn_name` string COMMENT '项目负责人名称',
+  `org_name` string COMMENT '单位名字',
+  `grant_code` string COMMENT '资助类别',
+  `grant_name` string COMMENT '资助类别代码',
+  `subject_code1` string COMMENT '申请代码1',
+  `subject_code2` string COMMENT '申请代码2',
+  `start_date` string COMMENT '开始日期',
+  `end_date` string COMMENT '截止日期',
+  `approval_year` string COMMENT '批准年份',
+  `duration` string COMMENT '期限',
+  `status` string COMMENT '项目状态',
+  `source` string COMMENT '数据来源')stored as orc;
+
+drop table dm.`dm_neo4j_organization`;
+CREATE TABLE dm.`dm_neo4j_organization`(
   `id` string,
-  `one_rank_id` string,
-  `one_rank_no` string, 
-  `one_rank_name` string,
-  `two_rank_id` string,
-  `two_rank_no` string,  
-  `two_rank_name` string)
-row format delimited fields terminated by '☔' stored as orc;
-
-CREATE TABLE dm.`dm_neo4j_product_subject_patent`(
-  `id` string,
-  `one_rank_id` string,
-  `one_rank_no` string, 
-  `one_rank_name` string,
-  `two_rank_id` string,
-  `two_rank_no` string,  
-  `two_rank_name` string)
-row format delimited fields terminated by '☔' stored as orc;
+  `org_name` string,
+  `en_name` string,
+  `alias` string,
+  `org_type` string,
+  `country` string,
+  `province` string,
+  `city` string,
+  source string)stored as orc;
 
 
-CREATE TABLE dm.`dm_neo4j_product_subject_criterion`(
-  `id` string,
-  `one_rank_id` string,
-  `one_rank_no` string, 
-  `one_rank_name` string,
-  `two_rank_id` string,
-  `two_rank_no` string,  
-  `two_rank_name` string)
-row format delimited fields terminated by '☔' stored as orc;
-
-
-CREATE TABLE dm.`dm_neo4j_product_subject_monograph`(
-  `id` string,
-  `one_rank_id` string,
-  `one_rank_no` string, 
-  `one_rank_name` string,
-  `two_rank_id` string,
-  `two_rank_no` string,  
-  `two_rank_name` string)
-row format delimited fields terminated by '☔' stored as orc;
-
-CREATE TABLE dm.`dm_neo4j_subject`(
-  `one_rank_id` string,
-  `one_rank_no` string, 
-  `one_rank_name` string,
-  `two_rank_id` string,
-  `two_rank_no` string,  
-  `two_rank_name` string)
-row format delimited fields terminated by '☔' stored as orc;
-
-
-CREATE TABLE dm.`dm_neo4j_product_keyword_journal`(
-  `id` string,
-  `keyword_id` string)
-row format delimited fields terminated by '☔' stored as orc;
-
-CREATE TABLE dm.`dm_neo4j_product_keyword_conference`(
-  `id` string,
-  `keyword_id` string)
-row format delimited fields terminated by '☔' stored as orc;
 
 CREATE TABLE dm.`dm_neo4j_keyword`(
-  `keyword_id` string,
-  `keyword` string)
-row format delimited fields terminated by '☔' stored as orc;
-
-
-CREATE TABLE dm.`dm_neo4j_product_journal_rel_journal`(
   `id` string,
-  `journal_id` string)
+  `zh_keyword` string,
+  `en_keyword` string
+  )row format delimited fields terminated by '☔' stored as orc;
+
+
+CREATE TABLE dm.`dm_neo4j_subject`(
+  `id` string,
+  `one_rank_no` string,
+  `one_rank_name` string,
+  `two_rank_id` string,
+  `two_rank_no` string,
+  `two_rank_name` string)
 row format delimited fields terminated by '☔' stored as orc;
 
 CREATE TABLE dm.`dm_neo4j_journal`(
-  `journal_id` string,
-  `chinese_name` string,
-  `english_name` string
-  )
-row format delimited fields terminated by '☔' stored as orc;
-
-CREATE TABLE dm.`dm_neo4j_product_conference_rel_conference`(
   `id` string,
-  `conference_id` string)
-row format delimited fields terminated by '☔' stored as orc;
+  `chinese_name` string,
+  `english_name` string,
+  `language` string,
+  `organizer` string,
+  `fullimpact` string,
+  `compleximpact` string,
+  `publish_region` string
+
+  ) stored as orc;
 
 CREATE TABLE dm.`dm_neo4j_conference`(
-  `conference_id` string,
+  `id` string,
+  `conference` string,
+  `organization` string)
+stored as orc;
+
+CREATE TABLE if not exists dm.`dm_neo4j_society`(
+  `id` string,
   `chinese_name` string,
-  `english_name` string
-  )
+  `english_name` string,
+  `subject_category` string,
+  `address` string,
+  `governing_body` string,
+  `support_unit` string,
+  `unit_member` string,
+  `individual_member` string
+  )stored as orc;
+
+
+
+
+
+
+
+CREATE TABLE dm.`dm_neo4j_person_product`(
+  `person_id` string,
+  `achievement_id` string)
 row format delimited fields terminated by '☔' stored as orc;
 
 
+CREATE TABLE dm.`dm_neo4j_product_keyword`(
+  `achievement_id` string,
+  `keyword_id` string)
+row format delimited fields terminated by '☔' stored as orc;
+
+CREATE TABLE dm.`dm_neo4j_product_subject`(
+  `achievement_id` string,
+  `one_rank_id` string,
+  `one_rank_no` string,
+  `one_rank_name` string,
+  `two_rank_id` string,
+  `two_rank_no` string,
+  `two_rank_name` string)
+row format delimited fields terminated by '☔' stored as orc;
+
+
+
+CREATE TABLE dm.`dm_neo4j_journal_rel_product_journal`(
+  `journal_id` string,
+  `achievement_id` string
+  )
+row format delimited fields terminated by '☔' stored as orc;
+
+CREATE TABLE dm.`dm_neo4j_conference_rel_product_conference`(
+  `conference_id` string,
+  `achievement_id` string
+  )
+row format delimited fields terminated by '☔' stored as orc;
+
+CREATE TABLE dm.`dm_neo4j_project_product`(
+  `project_id` string,
+  `achievement_id` string)
+stored as orc;
+
+
+CREATE TABLE dm.`dm_neo4j_organization_product`(
+  `organization_id` string,
+  `achievement_id` string)
+stored as orc;
+
+CREATE TABLE dm.`dm_neo4j_society_organization`(
+  `society_id` string,
+  `organization_id` string)
+stored as orc;
+
+CREATE TABLE dm.`dm_neo4j_journal_organization`(
+  `journal_id` string,
+  `organization_id` string)
+stored as orc;
+
+
+CREATE TABLE dm.`dm_neo4j_person_organization`(
+  `person_id` string,
+  `organization_id` string)
+stored as orc;
+
+CREATE TABLE dm.`dm_neo4j_project_keyword`(
+  `project_id` string,
+  `keyword_id` string)
+stored as orc;
+
+
+CREATE TABLE dm.`dm_neo4j_person_keyword`(
+  `person_id` string,
+  `keyword_id` string)
+stored as orc;
+
+
+CREATE TABLE dm.`dm_neo4j_project_subject`(
+  `project_id` string,
+  `two_rank_id` string)
+stored as orc;
+
+
+CREATE TABLE if not exists dm.`dm_neo4j_person_subject`(
+  `person_id` string,
+  `one_rank_id` string,
+  `one_rank_no` string,
+  `one_rank_name` string,
+  `two_rank_id` string,
+  `two_rank_no` string,
+  `two_rank_name` string,
+  `one_rank_count` string,
+  `two_rank_count` string
+  )stored as orc;
+
+
+CREATE TABLE if not exists dm.`dm_neo4j_keyword_subject`(
+  `keyword_id` string,
+  `one_rank_id` string,
+  `one_rank_no` string,
+  `one_rank_name` string,
+  `two_rank_id` string,
+  `two_rank_no` string,
+  `two_rank_name` string
+  )stored as orc;
+
+CREATE TABLE if not exists dm.`dm_neo4j_society_person`(
+  `society_id` string,
+  `person_id` string
+  )stored as orc;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+create table dm.dm_es_project(
+ id                           string    comment   '唯一标识'
+,zh_title                     string    comment   '项目中文名称'
+,en_title                     string    comment   '项目英文名称'
+,prj_no                       string    comment   '项目批准号'
+,person_id                    string    comment   '项目负责人id'
+,psn_name                     string    comment   '项目负责人名称'
+,org_name                     string    comment   '单位名字'
+,grant_code                   string    comment   '资助类别'
+,grant_name                   string    comment   '资助类别代码'
+,subject_code1                string    comment   '申请代码1'
+,subject_code2                string    comment   '申请代码2'
+,start_date                   string    comment   '开始日期'
+,end_date                     string    comment   '截止日期'
+,approval_year                string    comment   '批准年份'
+,duration                     string    comment   '期限'
+,status                       string    comment   '项目状态'
+,csummary                     string    comment   '中文摘要'
+,esummary                     string    comment   '英文摘要'
+,post_dr_no                   string    comment   '博士后人数'
+,dr_candidate_no              string    comment   '博士生人数'
+,ms_candidate_no              string    comment   '硕士生人数'
+,middle_no                    string    comment   '中级人数'
+,junior_no                    string    comment   '初级人数'
+,senior_no                    string    comment   '高级人数'
+,no_of_unit                   string    comment   '单位数'
+,inv_no                       string    comment   '总人数'
+,total_amt                    string    comment   '资助金额（直接经费）'
+,total_inamt                  string    comment   '已拨入金额'
+,change_amt                   string    comment   '调整金额'
+,all_amt                      string    comment   '项目总经费'
+,indirect_amt                 string    comment   '间接经费'
+,sbgz_amt                     string    comment   '设备购置费'
+,ind_inamt                    string    comment   '间接经费已拨入金额'
+,source                       string    comment   '数据来源'
+) stored as orc ;
 
 CREATE TABLE if not exists dm.`dm_es_product_journal`(
   `id` string, 

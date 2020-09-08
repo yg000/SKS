@@ -11,34 +11,32 @@ object Person {
       .enableHiveSupport()
       .getOrCreate()
 
-//    val person_neo4j= spark.sql(
-//      """
-//        |
-//        |select
-//        |   person_id as id
-//        |  ,zh_name
-//        |  ,en_name
-//        |  ,gender
-//        |  ,nation
-//        |  ,birthday
-//        |  ,birthplace
-//        |  ,org_name
-//        |  ,prof_title
-//        |  ,nationality
-//        |  ,province
-//        |  ,city
-//        |  ,degree,
-//        |flow_source,
-//        |source
-//        |from dwb.wb_person_nsfc_sts_academician_csai_ms
-//      """.stripMargin).dropDuplicates("id")
-//
-//    person_neo4j.createOrReplaceTempView("person_neo4j")
-//    spark.sql("insert overwrite table dm.dm_neo4j_person select * from person_neo4j")
 
     spark.sql(
       """
-        |insert overwrite table dm.dm_neo4j_person_add
+        |select
+        |   person_id as id
+        |  ,zh_name
+        |  ,en_name
+        |  ,gender
+        |  ,nation
+        |  ,birthday
+        |  ,birthplace
+        |  ,org_name
+        |  ,prof_title
+        |  ,nationality
+        |  ,province
+        |  ,city
+        |  ,degree,
+        |flow_source,
+        |source
+        |from dwb.wb_person_nsfc_sts_academician_csai_ms
+      """.stripMargin).dropDuplicates("id")
+      //.write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_person")
+
+
+    spark.sql(
+      """
         |select
         | person_id as id
         | ,name
@@ -56,7 +54,7 @@ object Person {
         | ,null
         | ,flag
         | from dwb.wb_person_add
-        |""".stripMargin)
+        |""".stripMargin).dropDuplicates("id").repartition(10).write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_person_add")
 
 //    spark.sql(
 //      """

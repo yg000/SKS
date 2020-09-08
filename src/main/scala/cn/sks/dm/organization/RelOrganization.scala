@@ -9,7 +9,7 @@ object RelOrganization {
     .config("spark.deploy.mode","client")
     .config("spark.cores.max", "8")
     .config("hive.metastore.uris","thrift://10.0.82.132:9083")
-    .config("spark.sql.shuffle.partitions","10")
+    .config("spark.sql.shuffle.partitions","50")
     .enableHiveSupport()
     .getOrCreate()
   spark.sparkContext.setLogLevel("warn")
@@ -17,15 +17,14 @@ object RelOrganization {
   def main(args: Array[String]): Unit = {
 
 
-
     //relationship person_organization
     spark.sql("""
-                |insert overwrite table dm.dm_neo4j_person_organization
                 |select
                 |person_id,
                 |organization_id
                 |from dwb.wb_organization_person where organization_id is not null
                 |""".stripMargin)
+      .write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_person_organization")
 
 
 //    //relationship society_org

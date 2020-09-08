@@ -48,27 +48,27 @@ object RelProduct {
 //      .repartition(5).createOrReplaceTempView("product_conference_re")
 //    spark.sql("insert overwrite table dm.dm_neo4j_conference_rel_product_conference select conference_id,achievement_id from product_conference_re")
 
+
     //product_subject
-
-    spark.sql(
-      """
-        |insert overwrite table dm.dm_neo4j_product_subject
-        |select a.*
-        | from (select * from dwb.wb_relation_product_subject where two_rank_id is not null)a
-        |join product_tb b on a.achievement_id = b.id
-        |""".stripMargin)
-
-
-    //project_product
-    spark.sql(
-      """
-        |insert overwrite table dm.dm_neo4j_project_product
-        |select
-        |project_id,
-        |achievement_id
-        | from dwb.wb_relation_product_project a
-        |join product_tb b on a.achievement_id = b.id
-        |""".stripMargin)
+//    spark.sql(
+//      """
+//        |insert overwrite table dm.dm_neo4j_product_subject
+//        |select a.*
+//        | from (select * from dwb.wb_relation_product_subject where two_rank_id is not null)a
+//        |join product_tb b on a.achievement_id = b.id
+//        |""".stripMargin)
+//
+//
+//    //project_product
+//    spark.sql(
+//      """
+//        |insert overwrite table dm.dm_neo4j_project_product
+//        |select
+//        |project_id,
+//        |achievement_id
+//        | from dwb.wb_relation_product_project a
+//        |join product_tb b on a.achievement_id = b.id
+//        |""".stripMargin)
 
 
     //product_person
@@ -77,37 +77,37 @@ object RelProduct {
 
     spark.sql(
       """
-        |insert overwrite table dm.dm_neo4j_person_product
         |select person_id
         | ,achievement_id
         | from product_person a
         | join dm.dm_neo4j_person b on a.person_id = b.id
         | join product_tb c on a.achievement_id = c.id
         |""".stripMargin)
-
-
+      .write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_person_product")
 
     //product_keyword
 
-    spark.sql(
-      """
-        |insert overwrite table dm.dm_neo4j_product_keyword
-        |select
-        |achievement_id,
-        |keyword_id
-        |from dwb.wb_relation_product_keyword a
-        |join product_tb b on a.achievement_id = b.id
-        |""".stripMargin)
+//    spark.sql(
+//      """
+//        |insert overwrite table dm.dm_neo4j_product_keyword
+//        |select
+//        |distinct achievement_id,
+//        |keyword_id
+//        |from dwb.wb_relation_product_keyword a
+//        |join product_tb b on a.achievement_id = b.id
+//        |join dm.dm_neo4j_keyword c on a.keyword_id = c.id
+//        |""".stripMargin)
 
-    //organization_prouduct
-    spark.sql(
-      """
-        |insert overwrite table dm.dm_neo4j_organization_product
-        |select
-        |organization_id,
-        |achievement_id
-        |from dwb.wb_product_organization a
-        |join product_tb b on a.achievement_id = b.id
-        |""".stripMargin)
+
+//    //organization_prouduct
+//    spark.sql(
+//      """
+//        |insert overwrite table dm.dm_neo4j_organization_product
+//        |select
+//        |organization_id,
+//        |achievement_id
+//        |from dwb.wb_product_organization a
+//        |join product_tb b on a.achievement_id = b.id
+//        |""".stripMargin)
   }
 }

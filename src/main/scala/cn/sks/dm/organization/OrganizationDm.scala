@@ -18,9 +18,7 @@ object OrganizationDm {
 
   def main(args: Array[String]): Unit = {
 
-//    AchievementUtil.getDataTrace(spark,"dwb.wb_organization","dm.dm_neo4j_organization")
-//    AchievementUtil.getDataTrace(spark,"dwb.wb_organization_add","dm.dm_neo4j_organization_add")
-//    AchievementUtil.getDataTrace(spark,"dwb.dm_es_organization","dm.wb_organization")
+
 
     spark.sql("""
                 |insert overwrite table dm.dm_neo4j_organization

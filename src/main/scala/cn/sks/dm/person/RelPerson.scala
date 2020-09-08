@@ -12,27 +12,24 @@ object RelPerson {
       .getOrCreate()
 
 
-//    //relationship person_subject
-//
-//    spark.sql("""
-//                |insert overwrite table dm.dm_neo4j_person_subject
-//                |select
-//                | a.*
-//                |from (select * from dwb.wb_person_subject where two_rank_name  is not null) a
-//                | join dm.dm_neo4j_person b on a.person_id = b.id
-//                |""".stripMargin)
-//
-//
-//    //dm_neo4j_person_keyword
-//    spark.sql("""
-//                |insert overwrite table dm.dm_neo4j_person_keyword
-//                |select
-//                |person_id,
-//                |keyword_id
-//                |from dwb.wb_relation_person_keyword a
-//                | join dm.dm_neo4j_person b on a.person_id = b.id
-//                |""".stripMargin)
+    //relationship person_subject
+    spark.sql("""
+                |select
+                | a.*
+                |from (select * from dwb.wb_person_subject where two_rank_name  is not null) a
+                | join dm.dm_neo4j_person b on a.person_id = b.id
+                |""".stripMargin)
+      .write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_person_subject")
 
+    //person_keyword
+    spark.sql("""
+                |select
+                |person_id,
+                |keyword_id
+                |from dwb.wb_relation_person_keyword a
+                | join dm.dm_neo4j_person b on a.person_id = b.id
+                |""".stripMargin)
+      .write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_person_keyword")
 
     //society_person
     spark.sql(
@@ -40,11 +37,8 @@ object RelPerson {
         |select society_id,
         |ifnull(person_id_to,person_id) as person_id
         |from ods.o_csai_society_person a left join dwb.wb_person_rel b on a.person_id = b.person_id_from
-        |""".stripMargin).createOrReplaceTempView("society_person")
-
-    spark.sql("insert overwrite table dm.dm_neo4j_society_person select * from society_person")
-
-
+        |""".stripMargin).repartition(10)
+      .write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_society_person")
 
 
 

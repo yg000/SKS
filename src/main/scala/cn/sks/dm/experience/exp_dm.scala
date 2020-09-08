@@ -38,6 +38,7 @@ object exp_dm {
 
   def main(args: Array[String]): Unit = {
 
+
     spark.sql(
       """
         |insert overwrite table dm.dm_neo4j_experience_study

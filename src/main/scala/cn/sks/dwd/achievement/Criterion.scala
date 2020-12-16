@@ -2,7 +2,7 @@ package cn.sks.dwd.achievement
 
 import org.apache.spark.sql.{Column, SparkSession}
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
-import cn.sks.jutil.H2dbUtil
+
 /*
 
 论文数据的整合的整体的代码
@@ -30,7 +30,7 @@ object Criterion {
 
     spark.sql(
       """
-        |select  achievement_id,concat_ws(';',collect_set(chinese_name)) as authors  from
+        |select  achievement_id,concat_ws(';',collect_list(chinese_name)) as authors  from
         | (select  achievement_id, person_id  from dwb.wb_product_all_person where product_type ='6') a  join  ods.o_csai_person_all b on a.person_id = b.person_id group by achievement_id
       """.stripMargin).createOrReplaceTempView("csai_criterion_authors")
 
@@ -59,7 +59,7 @@ object Criterion {
         |,'csai' as source
         |from ods.o_csai_criterion a left join csai_criterion_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_criterion_csai")
-    //spark.sql("insert overwrite  table dwd.wd_product_criterion_csai  select * from wd_product_criterion_csai")
+    spark.sql("insert overwrite  table dwd.wd_product_criterion_csai  select * from wd_product_criterion_csai")
 
     AchievementUtil.getDataTrace(spark,"ods.o_csai_criterion","dwd.wd_product_criterion_csai")
     AchievementUtil.getDataTrace(spark,"dwb.wb_product_all_person","dwd.wd_product_criterion_csai")
@@ -90,7 +90,7 @@ object Criterion {
         |,'nsfc' as source
         |from ods.o_nsfc_product_criterion
       """.stripMargin).repartition(1).createOrReplaceTempView("wd_product_criterion_nsfc")
-    //spark.sql("insert overwrite  table dwd.wd_product_criterion_nsfc  select * from wd_product_criterion_nsfc")
+    spark.sql("insert overwrite  table dwd.wd_product_criterion_nsfc  select * from wd_product_criterion_nsfc")
 
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_criterion","dwd.wd_product_criterion_nsfc")
 

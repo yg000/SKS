@@ -62,10 +62,8 @@ object Achievement {
         |  ,c.authors
         |  ,'nsfc' as source
         |from ods.o_nsfc_product_person a
-        |left join dwd.wd_person_nsfc b
-        | on a.person_id=b.person_id
-        |left join dwd.wd_product_all_nsfc  c
-        |on a.achievement_id=c.achievement_id and a.product_type=c.product_type
+        |left join dwd.wd_person_nsfc b  on a.person_id=b.person_id
+        |left join dwd.wd_product_all_nsfc  c  on a.achievement_id=c.achievement_id and a.product_type=c.product_type
       """.stripMargin)
 
   }

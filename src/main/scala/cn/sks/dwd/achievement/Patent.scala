@@ -1,6 +1,5 @@
 package cn.sks.dwd.achievement
 
-import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 /*
@@ -79,7 +78,7 @@ object Patent {
         |from ods.o_nsfc_product_patent
       """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_patent_nsfc")
 
-    //spark.sql("insert overwrite table dwd.wd_product_patent_nsfc  select * from wd_product_patent_nsfc")
+    spark.sql("insert overwrite table dwd.wd_product_patent_nsfc  select * from wd_product_patent_nsfc")
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_patent","dwd.wd_product_patent_nsfc")
 
     //项目产出成果
@@ -129,7 +128,7 @@ object Patent {
         |,'nsfc' as source
         |from ods.o_nsfc_project_patent
       """.stripMargin).repartition(20).createOrReplaceTempView("wd_product_patent_business_nsfc")
-    //spark.sql("insert overwrite table dwd.wd_product_patent_project_nsfc  select * from wd_product_patent_business_nsfc")
+    spark.sql("insert overwrite table dwd.wd_product_patent_project_nsfc  select * from wd_product_patent_business_nsfc")
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_project_patent","dwd.wd_product_patent_project_nsfc")
 
     spark.sql(
@@ -178,7 +177,7 @@ object Patent {
         |,'nsfc' as source
         |from ods.o_nsfc_npd_patent
       """.stripMargin).repartition(10).createOrReplaceTempView("wd_product_patent_npd_nsfc")
-    //spark.sql("insert overwrite table dwd.wd_product_patent_npd_nsfc  select * from wd_product_patent_npd_nsfc")
+    spark.sql("insert overwrite table dwd.wd_product_patent_npd_nsfc  select * from wd_product_patent_npd_nsfc")
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_npd_patent","dwd.wd_product_patent_npd_nsfc")
 
 
@@ -188,8 +187,9 @@ object Patent {
 
     spark.sql(
       """
-        |select achievement_id,concat_ws(';',collect_set(person_name)) as authors from ods.o_csai_product_patent_inventor group by achievement_id
+        |select achievement_id,concat_ws(';',collect_list(person_name)) as authors from ods.o_csai_product_patent_inventor group by achievement_id
         |""".stripMargin).createOrReplaceTempView("csai_patent_authors")
+
     spark.sql(
       """
         |select
@@ -237,13 +237,13 @@ object Patent {
         |from ods.o_csai_product_patent a left join csai_patent_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).repartition(20).createOrReplaceTempView("wd_product_patent_csai")
 
-    //spark.sql("insert overwrite table dwd.wd_product_patent_csai  select * from wd_product_patent_csai")
+    spark.sql("insert overwrite table dwd.wd_product_patent_csai  select * from wd_product_patent_csai")
     AchievementUtil.getDataTrace(spark,"ods.o_csai_product_patent","dwd.wd_product_patent_csai")
     AchievementUtil.getDataTrace(spark,"ods.o_csai_product_patent_inventor","dwd.wd_product_patent_csai")
     //ms
     spark.sql(
       """
-        |select achivement_id as achievement_id,concat_ws(';',collect_set(person_name)) as authors from ods.o_ms_product_author group by achievement_id
+        |select achivement_id as achievement_id,concat_ws(';',collect_list(person_name)) as authors from ods.o_ms_product_author group by achievement_id
         |""".stripMargin).createOrReplaceTempView("ms_authors")
 
     spark.sql(
@@ -293,7 +293,7 @@ object Patent {
         |from (select * from dwd.wd_product_ms_all where paper_type='2') a left join ms_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).repartition(20).createOrReplaceTempView("product_ms")
 
-     //spark.sql("insert overwrite table dwd.wd_product_patent_ms  select * from product_ms")
+     spark.sql("insert overwrite table dwd.wd_product_patent_ms  select * from product_ms")
     AchievementUtil.getDataTrace(spark,"dwd.wd_product_ms_all","dwd.wd_product_patent_ms")
     AchievementUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_product_patent_ms")
     spark.stop()

@@ -1,6 +1,5 @@
 package cn.sks.dwd.achievement
 
-import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 /*
@@ -12,7 +11,7 @@ object PaperJournal {
   def main(args: Array[String]): Unit = {
 
     val spark: SparkSession = SparkSession.builder()
-     // .master("local[15]")
+      .master("local[40]")
       .config("spark.deploy.mode", "clent")
       .config("executor-memory", "12g")
       .config("executor-cores", "6")
@@ -36,7 +35,7 @@ object PaperJournal {
 
     spark.sql(
       """
-        |select works_uuid as achievement_id,concat_ws(';',collect_set(credit_name)) as authors from ods.o_orcid_product_journal_conference_author group by works_uuid
+        |select works_uuid as achievement_id,concat_ws(';',collect_list(credit_name)) as authors from ods.o_orcid_product_journal_conference_author group by works_uuid
         |""".stripMargin).createOrReplaceTempView("orcid_authors")
 
     spark.sql(
@@ -86,7 +85,7 @@ object PaperJournal {
         |,'orcid' as source
         |from ods.o_orcid_product_journal a left join orcid_authors b on a.works_uuid  = b.achievement_id
       """.stripMargin).repartition(10).createOrReplaceTempView("product_orcid")
-    //spark.sql("insert overwrite table dwd.wd_product_journal_orcid  select * from product_orcid")
+    spark.sql("insert overwrite table dwd.wd_product_journal_orcid  select * from product_orcid")
 
     AchievementUtil.getDataTrace(spark,"ods.o_orcid_product_journal","dwd.wd_product_journal_orcid")
     AchievementUtil.getDataTrace(spark,"ods.o_orcid_product_journal_conference_author","dwd.wd_product_journal_orcid")
@@ -95,7 +94,7 @@ object PaperJournal {
 
     spark.sql(
       """
-        |select achivement_id as achievement_id,concat_ws(';',collect_set(person_name)) as authors from ods.o_ms_product_author group by achievement_id
+        |select achivement_id as achievement_id,concat_ws(';',collect_list(person_name)) as authors from ods.o_ms_product_author group by achievement_id
         |""".stripMargin).createOrReplaceTempView("ms_authors")
     spark.sql(
       """
@@ -144,7 +143,7 @@ object PaperJournal {
         |,'ms' as source
         |from (select * from ods.o_ms_product_all where paper_type='1') a left join ms_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).repartition(30).createOrReplaceTempView("product_ms")
-      //spark.sql("insert overwrite table dwd.wd_product_journal_ms  select * from product_ms")
+    spark.sql("insert overwrite table dwd.wd_product_journal_ms  select * from product_ms")
 
     AchievementUtil.getDataTrace(spark,"ods.o_ms_product_all","dwd.wd_product_journal_ms")
     AchievementUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_product_journal_ms")
@@ -152,7 +151,7 @@ object PaperJournal {
     //csai
     spark.sql(
       """
-        |select achivement_id as achievement_id,concat_ws(';',collect_set(person_name)) as authors from ods.o_csai_product_journal_author group by achivement_id
+        |select achivement_id as achievement_id,concat_ws(';',collect_list(person_name)) as authors from ods.o_csai_product_journal_author group by achivement_id
         |""".stripMargin).createOrReplaceTempView("csai_authors")
     spark.sql(
       """
@@ -199,9 +198,18 @@ object PaperJournal {
         |,journal_id
         |,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_product_journal_csai\"","," ,"\"id\"",":","\"",a.achievement_id,"\"","}") as flow_source
         |,'csai' as source
-        |from ods.o_csai_product_journal a left join csai_authors b on a.achievement_id  = b.achievement_id
+        |from ods.o_csai_product_journal a left join ods.o_cnki_paper b on a.fulltext_url  = b.yjurl
       """.stripMargin).createOrReplaceTempView("product_csai")
-     //spark.sql("insert overwrite table dwd.wd_product_journal_csai  select * from product_csai")
+    spark.sql("insert overwrite table dwd.wd_product_journal_csai  select * from product_csai")
+
+
+
+
+
+
+
+
+
 
     AchievementUtil.getDataTrace(spark,"ods.o_csai_product_journal","dwd.wd_product_journal_csai")
     AchievementUtil.getDataTrace(spark,"ods.o_csai_product_journal_author","dwd.wd_product_journal_csai")
@@ -255,7 +263,7 @@ object PaperJournal {
         |from ods.o_nsfc_project_journal
       """.stripMargin).repartition(10).createOrReplaceTempView("o_product_business_journal_nsfc")
 
-    //spark.sql("insert overwrite table dwd.wd_product_journal_project_nsfc  select * from o_product_business_journal_nsfc")
+    spark.sql("insert overwrite table dwd.wd_product_journal_project_nsfc  select * from o_product_business_journal_nsfc")
 
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_project_journal","dwd.wd_product_journal_project_nsfc")
 
@@ -308,7 +316,7 @@ object PaperJournal {
         |from ods.o_nsfc_npd_journal
       """.stripMargin).repartition(10).createOrReplaceTempView("o_product_business_journal_npd_nsfc")
 
-    //spark.sql("insert overwrite table dwd.wd_product_journal_npd_nsfc  select * from o_product_business_journal_npd_nsfc")
+    spark.sql("insert overwrite table dwd.wd_product_journal_npd_nsfc  select * from o_product_business_journal_npd_nsfc")
 
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_npd_journal","dwd.wd_product_journal_npd_nsfc")
 
@@ -359,7 +367,7 @@ object PaperJournal {
         |,'nsfc' as source
         |from ods.o_nsfc_product_journal
       """.stripMargin).createOrReplaceTempView("o_product_journal_nsfc")
-    //spark.sql("insert overwrite table dwd.wd_product_journal_nsfc  select * from o_product_journal_nsfc")
+    spark.sql("insert overwrite table dwd.wd_product_journal_nsfc  select * from o_product_journal_nsfc")
 
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_journal","dwd.wd_product_journal_nsfc")
 

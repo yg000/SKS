@@ -1,6 +1,5 @@
 package cn.sks.dwd.achievement
 
-import cn.sks.jutil.H2dbUtil
 import org.apache.spark.sql.{Column, SparkSession}
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 
@@ -13,7 +12,7 @@ object Monograph {
   def main(args: Array[String]): Unit = {
 
     val spark: SparkSession = SparkSession.builder()
-      .master("local[12]")
+      .master("local[40]")
      // .config("spark.deploy.mode", "8g")
       //.config("spark.drivermemory", "32g")
       //.config("spark.cores.max", "16")
@@ -50,7 +49,7 @@ object Monograph {
         |,'nsfc' as source
         |from ods.o_nsfc_product_monograph
       """.stripMargin).repartition(5).createOrReplaceTempView("wd_product_monograph_nsfc")
-    //spark.sql("insert overwrite  table dwd.wd_product_monograph_nsfc   select * from wd_product_monograph_nsfc")
+    spark.sql("insert overwrite  table dwd.wd_product_monograph_nsfc   select * from wd_product_monograph_nsfc")
 
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_product_monograph","dwd.wd_product_monograph_nsfc")
 
@@ -76,7 +75,7 @@ object Monograph {
         |,'nsfc' as source
         |from ods.o_nsfc_project_monograph
       """.stripMargin).repartition(1).createOrReplaceTempView("wd_product_monograph_business_nsfc")
-    //spark.sql("insert overwrite  table dwd.wd_product_monograph_project_nsfc  select * from wd_product_monograph_business_nsfc")
+    spark.sql("insert overwrite  table dwd.wd_product_monograph_project_nsfc  select * from wd_product_monograph_business_nsfc")
 
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_project_monograph","dwd.wd_product_monograph_project_nsfc")
 
@@ -102,14 +101,14 @@ object Monograph {
         |,'nsfc' as source
         |from ods.o_nsfc_npd_monograph
       """.stripMargin).repartition(2).createOrReplaceTempView("wd_product_monograph_npd_nsfc")
-    //spark.sql("insert overwrite  table dwd.wd_product_monograph_npd_nsfc  select * from wd_product_monograph_npd_nsfc")
+    spark.sql("insert overwrite  table dwd.wd_product_monograph_npd_nsfc  select * from wd_product_monograph_npd_nsfc")
 
     AchievementUtil.getDataTrace(spark,"ods.o_nsfc_npd_monograph","dwd.wd_product_monograph_npd_nsfc")
 
 
     spark.sql(
       """
-        |select achievement_id,concat_ws(';',collect_set(person_name)) as authors from ods.o_csai_product_monograph_author group by achievement_id
+        |select achievement_id,concat_ws(';',collect_list(person_name)) as authors from ods.o_csai_product_monograph_author group by achievement_id
         |""".stripMargin).createOrReplaceTempView("csai_monograph_authors")
 
     spark.sql(
@@ -134,7 +133,7 @@ object Monograph {
         |,'csai' as source
         |from ods.o_csai_product_monograph a left join csai_monograph_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).repartition(1).createOrReplaceTempView("wd_product_monograph_csai")
-    //spark.sql("insert overwrite  table dwd.wd_product_monograph_csai  select * from wd_product_monograph_csai")
+    spark.sql("insert overwrite  table dwd.wd_product_monograph_csai  select * from wd_product_monograph_csai")
 
 
     AchievementUtil.getDataTrace(spark,"ods.o_csai_product_monograph","dwd.wd_product_monograph_csai")
@@ -143,7 +142,7 @@ object Monograph {
     //ms
     spark.sql(
       """
-        |select achivement_id as achievement_id,concat_ws(';',collect_set(person_name)) as authors from ods.o_ms_product_author group by achievement_id
+        |select achivement_id as achievement_id,concat_ws(';',collect_list(person_name)) as authors from ods.o_ms_product_author group by achievement_id
         |""".stripMargin).createOrReplaceTempView("ms_authors")
 
     spark.sql(
@@ -168,7 +167,7 @@ object Monograph {
         |,'ms' as source
         |from (select * from dwd.wd_product_ms_all where paper_type='4' or paper_type='5') a left join ms_authors b on a.achievement_id  = b.achievement_id
       """.stripMargin).repartition(10).createOrReplaceTempView("product_ms")
-    //spark.sql("insert overwrite  table dwd.wd_product_monograph_ms  select * from product_ms")
+    spark.sql("insert overwrite  table dwd.wd_product_monograph_ms  select * from product_ms")
 
     AchievementUtil.getDataTrace(spark,"dwd.wd_product_ms_all","dwd.wd_product_monograph_ms")
     AchievementUtil.getDataTrace(spark,"ods.o_ms_product_author","dwd.wd_product_monograph_ms")

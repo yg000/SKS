@@ -62,6 +62,7 @@ object PersonToDwd_new {
         |,null as degreecountry
         |,null as major
         |,null as brief_description
+        |,'4'
         |,'ms' as source
         |,concat("{","\"source\"",":","\"ms\"",",""\"table\"",":","\"wd_person_ms\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as flow_source
         |from ods.o_ms_product_author
@@ -110,11 +111,12 @@ object PersonToDwd_new {
         |,null as  degree_country
         |,null as  major
         |,null as  brief_description
+        |,'1'
         |,'arp' as source
         |,concat("{","\"source\"",":","\"arp\"",",""\"table\"",":","\"wd_person_arp\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as flow_source
         |from ods.o_arp_person
       """.stripMargin)
-    //.repartition(200).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_arp")
+    .repartition(20).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_arp")
     // 科协两院院士
     println("-----------academician--------------")
     spark.sql(
@@ -155,13 +157,14 @@ object PersonToDwd_new {
         |    ,null as  degree_country
         |    ,null as  major
         |    ,a.brief_description as  brief_description
+        |    ,'2'
         |  ,'academician' as source
         |  ,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_person_academician\"","," ,"\"person_id\"",":","\"",a.person_id,"\"","}") as flow_source
         |from ods.o_csai_person_academician a
         |left join ods.o_csai_person_all b
         |on a.person_id=b.person_id
       """.stripMargin)
-      //.dropDuplicates("person_id").repartition(2).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_academician")
+      .dropDuplicates("person_id").repartition(2).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_academician")
 
     // 科协的人员（排除两院院士）
     println("-----------csai--------------")
@@ -203,12 +206,13 @@ object PersonToDwd_new {
         |,null as degreecountry
         |,null as major
         |,a.brief_description
+        |,'3'
         |,'csai' as source
         |,concat("{","\"source\"",":","\"csai\"",",""\"table\"",":","\"wd_person_csai\"","," ,"\"person_id\"",":","\"",a.person_id,"\"","}") as flow_source
         |from ods.o_csai_person_all a
         | where not exists (select * from ods.o_csai_person_academician b where a.person_id=b.person_id)
       """.stripMargin)
-    //.repartition(200).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_csai")
+    .repartition(200).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_csai")
 
 
 
@@ -260,6 +264,7 @@ object PersonToDwd_new {
         |   ,e.zh_cn_caption as degree_country
         |   ,major
         |   ,null as brief_description
+        |   ,'0'
         |   ,'nsfc' as source
         |   ,concat("{","\"source\"",":","\"nsfc\"",",""\"table\"",":","\"wd_person_nsfc\"","," ,"\"person_id\"",":","\"",person_id,"\"","}") as flow_source
         |from ods.o_nsfc_person  a
@@ -276,7 +281,7 @@ object PersonToDwd_new {
         |left join ods.o_nsfc_person_prof_title_comparison g
         |on trim(a.prof_title_id)=trim(g.prof_title_id)
       """.stripMargin)
-      //.repartition(200).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_nsfc")
+      .repartition(100).write.format("hive").mode("overwrite").insertInto("dwd.wd_person_nsfc")
 
 
 

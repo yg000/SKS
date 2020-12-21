@@ -32,7 +32,7 @@ object Achievement {
     CommonUtil.getDataTrace(spark,"ods.o_arp_person","dwd.wd_person_arp")
     CommonUtil.getDataTrace(spark,"ods.o_csai_person_academician","dwd.wd_person_academician")
     CommonUtil.getDataTrace(spark,"ods.o_csai_person_all","dwd.wd_person_csai")
-    CommonUtil.getDataTrace(spark,"ods.wd_person_nsfc","dwd.o_nsfc_person")
+    CommonUtil.getDataTrace(spark,"ods.o_nsfc_person","dwd.wd_person_nsfc")
 
     //organization
     CommonUtil.getDataTrace(spark,"ods.o_manual_organization_standards_institutions","dwd.wd_organization_manual")

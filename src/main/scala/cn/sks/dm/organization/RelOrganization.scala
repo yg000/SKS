@@ -4,8 +4,8 @@ import org.apache.spark.sql.SparkSession
 
 object RelOrganization {
   val spark = SparkSession.builder()
-    .master("local[20]")
-    .appName("org_rel")
+    //.master("local[20]")
+    .appName("RelOrganization")
     .config("spark.deploy.mode","client")
     .config("spark.cores.max", "8")
     .config("hive.metastore.uris","thrift://10.0.82.132:9083")

@@ -5,8 +5,8 @@ import org.apache.spark.sql.SparkSession
 object RelPerson {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .master("local[12]")
-      .appName("dm_Relation")
+      //.master("local[12]")
+      .appName("RelPerson")
       .config("hive.metastore.uris","thrift://10.0.82.132:9083")
       .enableHiveSupport()
       .getOrCreate()
@@ -41,6 +41,19 @@ object RelPerson {
       .write.format("hive").mode("overwrite").insertInto("dm.dm_neo4j_society_person")
 
 
+    //person_advisor
+    spark.read.table("dwb.wb_person_advisor").dropDuplicates("person_id","advisor_id").createOrReplaceTempView("wb_person_advisor")
+    spark.sql(
+      """
+        |insert overwrite table dm.dm_neo4j_person_advisor
+        |select
+        |person_id,
+        |advisor_id,
+        |degree,
+        |year,
+        |flag
+        |from  wb_person_advisor
+        |""".stripMargin)
 
 
   }

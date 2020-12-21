@@ -26,7 +26,7 @@ object PersonFusionCsaiTst {
     spark.udf.register("union_flow_source", DefineUDF.unionFlowSource _)
 
 
-    //ready
+    ////step 0. 准备数据
     spark.sql(
       s"""
          |ALTER TABLE dwb.wb_person_rel_partition DROP IF EXISTS PARTITION (flag='$flag')
@@ -72,6 +72,8 @@ object PersonFusionCsaiTst {
 
     val person_from_distinct_with_title  = PersonUtil.getAddTitle(spark,person_from,"wd_product_person_ext_csai")
 
+
+    //// step 1. owner fusion 自身融合
     val person_from_distinct_rule1 = PersonUtil.dropDuplicates(spark,person_from_distinct_with_title,"zh_name","clean_title")
     val person_from_distinct_rule1_rel = PersonUtil.getDistinctRelation(spark,person_from_distinct_with_title,person_from_distinct_rule1,"zh_name","clean_title","","zh_name+title").cache()
 
@@ -84,6 +86,7 @@ object PersonFusionCsaiTst {
          |select * from tmp_rel
          |""".stripMargin)
 
+    // 2. 融入数据
     val person_to_with_title  = PersonUtil.getAddTitle(spark,person_to,"wd_product_person_ext_nsfc")
     //val person_from_with_title  = person_from_distinct_rule1
     val person_from_with_title  = PersonUtil.getAddTitle(spark,person_from,"wd_product_person_ext_csai_transform")
@@ -93,11 +96,7 @@ object PersonFusionCsaiTst {
 
     val person_fusion_relation = person_fusion.dropDuplicates("person_id_from","person_id_to").cache()
 
-    person_fusion_relation.createOrReplaceTempView("comparison_table")
-    PersonUtil.getSource(spark,"comparison_table").createOrReplaceTempView("get_source")
-
-
-    PersonUtil.getDeliverRelation (spark,distinct_from_relation,person_fusion_relation).unionAll(person_fusion_relation.select("person_id_from","person_id_to")).dropDuplicates("person_id_from","person_id_to")
+    PersonUtil.getDeliverRelation (spark,distinct_from_relation,person_fusion_relation).unionAll(person_fusion_relation).dropDuplicates("person_id_from","person_id_to")
       .createOrReplaceTempView("person_rel")
 
     spark.sql(
@@ -107,14 +106,7 @@ object PersonFusionCsaiTst {
          |""".stripMargin)
 
 
-    spark.sql(
-      """
-        |select
-        |ifnull(person_id_to,person_id) as person_id
-        |,zh_title from wd_product_person_ext_csai a left join dwb.wb_person_rel_partition b on a.person_id = b.person_id_from
-        |""".stripMargin).createOrReplaceTempView("wd_product_person_ext_csai_transform_2")
-
-
+    //3.再次
     val person_to_distinct = person_to.unionAll(person_from)
 
     val person_to_distinct_with_title  = PersonUtil.getAddTitle(spark,person_to_distinct,"wd_product_person")
@@ -124,32 +116,26 @@ object PersonFusionCsaiTst {
 
     val distinct_to_relation = PersonUtil.getDeliverOwnerRelation (spark,person_to_distinct_rule1_rel).cache()
 
-
-    distinct_to_relation.createOrReplaceTempView("tmp")
-
-    spark.sql(
-      s"""
-         |insert overwrite table dwb.wb_person_rel_partition partition (flag='${flag}_tst0')
-         |select * from tmp
-         |""".stripMargin)
-
     val person_rel = spark.sql(
       s"""
         |select * from dwb.wb_person_rel_partition where flag='$flag'
         |""".stripMargin)
-
 
     PersonUtil.getDeliverRelation (spark,person_rel,distinct_to_relation).unionAll(distinct_to_relation).dropDuplicates("person_id_from","person_id_to")
       .repartition(20).createOrReplaceTempView("person_rel")
 
     spark.sql(
       s"""
-         |insert overwrite table dwb.wb_person_rel_partition partition (flag='${flag}_tst')
+         |insert overwrite table dwb.wb_person_rel_partition partition (flag='${flag}')
          |select * from person_rel
          |""".stripMargin)
 
-    // xie ru  dwb.wb_person_nsfc_sts_academician_csai
+    // 4.添加flow_source，去重，录入hive  dwb.wb_person_nsfc_sts_academician_csai
     person_to.unionAll(spark.read.table("dwd.wd_person_csai")).createOrReplaceTempView("person_nsfc_sts_academician_csai")
+
+    spark.read.table("dwb.wb_person_rel_partition").filter(s"flag='$flag'").createOrReplaceTempView("comparison_table")
+    PersonUtil.getSource(spark,"comparison_table").createOrReplaceTempView("get_source")
+
     spark.sql(
       """
         |select

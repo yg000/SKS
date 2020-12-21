@@ -17,7 +17,7 @@ object Criterion {
       //      .config("spark.deploy.mode", "8g")
       //      .config("spark.drivermemory", "32g")
       //      .config("spark.cores.max", "16")
-      .config("spark.sql.shuffle.partitions","10")
+      .config("spark.sql.shuffle.partitions","100")
       .config("hive.metastore.uris", "thrift://10.0.82.132:9083")
       .appName("Criterion")
       .enableHiveSupport()
@@ -32,6 +32,20 @@ object Criterion {
 
     val product_csai = spark.read.table("dwd.wd_product_criterion_csai")
     val product_nsfc_person = spark.read.table("dwd.wd_product_criterion_nsfc")
+
+//    val product_csai_with_authors = AchievementUtil.explodeAuthors(spark,product_csai,"authors")
+//    val product_nsfc_with_authors = AchievementUtil.explodeAuthors(spark,product_nsfc_person,"authors")
+//
+//    val product_csai_with_title = NameToPinyinUtil.nameToPinyin(spark, product_csai_with_authors, "person_name")
+//
+//
+//    product_csai_with_title.createOrReplaceTempView("mid_t")
+//    val from_distinct_rule1 = spark.sql(
+//      """
+//        |select
+//        |""".stripMargin)
+
+
     //数据融合
 
     val fusion_data_nsfc = AchievementUtil.explodeAuthors(spark,product_nsfc_person,"authors")

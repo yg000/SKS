@@ -39,7 +39,8 @@ object Entity {
         |select
         |keyword_id,
         |zh_keyword,
-        |en_keyword
+        |en_keyword,
+        |source
         |from dwb.wb_keyword
         |""".stripMargin)
 //

@@ -2,7 +2,7 @@ package cn.sks.dwb.achievement
 
 import cn.sks.jutil.H2dbUtil
 import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /*
 
@@ -13,7 +13,7 @@ object PaperJournal {
   def main(args: Array[String]): Unit = {
 
     val spark: SparkSession = SparkSession.builder()
-      //.master("local[40]")
+     // .master("local[40]")
       .config("spark.deploy.mode", "clent")
       .config("executor-memory", "12g")
       .config("executor-cores", "6")
@@ -21,7 +21,7 @@ object PaperJournal {
       //      .config("spark.drivermemory", "32g")
       //      .config("spark.cores.max", "16")
       .config("hive.metastore.uris", "thrift://10.0.82.132:9083")
-      .config("spark.sql.shuffle.partitions", "120")
+      .config("spark.sql.shuffle.partitions", "200")
       .appName("journal")
       .enableHiveSupport()
       .getOrCreate()
@@ -44,7 +44,7 @@ object PaperJournal {
     //将基金委对应的论文成果对应的作者和论文的字段合并到一块儿
 
 
-    val product_nsfc = product_nsfc_person.unionAll(product_nsfc_project).unionAll(product_nsfc_npd).dropDuplicates("achievement_id")
+    val product_nsfc = product_nsfc_person.unionAll(product_nsfc_project).unionAll(product_nsfc_npd).dropDuplicates("achievement_id").cache()
 
     val fusion_data_nsfc = AchievementUtil.explodeAuthors(spark, product_nsfc, "authors")
     val fushion_data_csai = AchievementUtil.explodeAuthors(spark, product_csai, "authors")
@@ -55,7 +55,7 @@ object PaperJournal {
     AchievementUtil.getComparisonTable(spark, "fushion_data_nsfc_pinyin", "fushion_data_csai_pinyin")
       .createOrReplaceTempView("wb_product_journal_csai_nsfc_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_journal_csai_nsfc_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_journal_csai_nsfc_rel")
+    //spark.sql("insert overwrite table dwb.wb_product_journal_csai_nsfc_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_journal_csai_nsfc_rel")
 
     AchievementUtil.getSource(spark, "wb_product_journal_csai_nsfc_rel").createOrReplaceTempView("get_source")
 
@@ -113,11 +113,10 @@ object PaperJournal {
 
     spark.sql(
       """
-        |insert overwrite table dwb.wb_product_journal_csai_nsfc
         |select a.*
         |from product_journal_csai_nsfc_get_source a left join  dwb.wb_product_journal_csai_nsfc_rel b on a.achievement_id = b.achievement_id_from where b.achievement_id_from is null
         |""".stripMargin)
-
+      //.write.format("hive").mode(SaveMode.Overwrite).insertInto("dwb.wb_product_journal_csai_nsfc")
     // csai_nsfc_ms
 
     val product_csai_nsfc = spark.read.table("dwb.wb_product_journal_csai_nsfc")
@@ -127,7 +126,6 @@ object PaperJournal {
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_csai_nsfc, "person_name")
       .createOrReplaceTempView("fushion_data_csai_nsfc_pinyin")
 
-    // spark.sql("insert overwrite table dwd.wd_product_fusion_data_monograph_ms_csai_nsfc  select * from fushion_data_csai_nsfc_pinyin")
 
     val fushion_data_ms = AchievementUtil.explodeAuthors(spark, product_ms, "authors")
 
@@ -136,7 +134,7 @@ object PaperJournal {
 
     AchievementUtil.getComparisonTable(spark, "fushion_data_ms_pinyin", "fushion_data_csai_nsfc_pinyin").createOrReplaceTempView("wb_product_journal_csai_nsfc_ms_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_journal_csai_nsfc_ms_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_journal_csai_nsfc_ms_rel")
+    //spark.sql("insert overwrite table dwb.wb_product_journal_csai_nsfc_ms_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_journal_csai_nsfc_ms_rel")
 
     AchievementUtil.getSource(spark, "wb_product_journal_csai_nsfc_ms_rel").createOrReplaceTempView("get_source")
 
@@ -194,10 +192,10 @@ object PaperJournal {
 
     spark.sql(
       """
-        |insert overwrite table dwb.wb_product_journal_csai_nsfc_ms
         |select a.*
         |from product_journal_csai_nsfc_ms_get_source a left join  dwb.wb_product_journal_csai_nsfc_ms_rel b on a.achievement_id = b.achievement_id_from where b.achievement_id_from is null
         |""".stripMargin)
+      //.write.format("hive").mode(SaveMode.Overwrite).insertInto("dwb.wb_product_journal_csai_nsfc_ms")
 
     //csai_nsfc_ms_orcid
 
@@ -209,8 +207,6 @@ object PaperJournal {
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_csai_nsfc_ms, "person_name")
       .createOrReplaceTempView("fushion_data_csai_nsfc_ms_pinyin")
 
-    // spark.sql("insert overwrite table dwd.wd_product_fusion_data_monograph_orcid_csai_nsfc_ms  select * from fushion_data_csai_nsfc_ms_pinyin")
-
     val fushion_data_orcid = AchievementUtil.explodeAuthors(spark, product_orcid, "authors")
 
     NameToPinyinUtil.nameToPinyin(spark, fushion_data_orcid, "person_name")
@@ -218,7 +214,7 @@ object PaperJournal {
 
     AchievementUtil.getComparisonTable(spark, "fushion_data_orcid_pinyin", "fushion_data_csai_nsfc_ms_pinyin").createOrReplaceTempView("wb_product_journal_csai_nsfc_ms_orcid_rel")
 
-    spark.sql("insert overwrite table dwb.wb_product_journal_csai_nsfc_ms_orcid_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_journal_csai_nsfc_ms_orcid_rel")
+    //spark.sql("insert overwrite table dwb.wb_product_journal_csai_nsfc_ms_orcid_rel  select achievement_id_to,achievement_id_from,product_type,source  from wb_product_journal_csai_nsfc_ms_orcid_rel")
 
     AchievementUtil.getSource(spark, "wb_product_journal_csai_nsfc_ms_orcid_rel").createOrReplaceTempView("get_source")
 

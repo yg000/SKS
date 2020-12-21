@@ -21,7 +21,7 @@ object Achievement {
 
   def main(args: Array[String]): Unit = {
 
-    CommonUtil.getDataTrace(spark,"dwb.wb_product_journal_csai_nsfc_ms_orcids","dm.dm_neo4j_product_journal")
+    CommonUtil.getDataTrace(spark,"dwb.wb_product_journal_csai_nsfc_ms_orcid","dm.dm_neo4j_product_journal")
     CommonUtil.getDataTrace(spark,"dwb.wb_product_conference_ms_nsfc_orcid","dm.dm_neo4j_product_conference")
     CommonUtil.getDataTrace(spark,"dwb.wb_product_patent_csai_nsfc_ms","dm.dm_neo4j_product_patent")
     CommonUtil.getDataTrace(spark,"dwb.wb_product_monograph_csai_nsfc_ms","dm.dm_neo4j_product_monograph")

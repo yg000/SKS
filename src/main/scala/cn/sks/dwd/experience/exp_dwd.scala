@@ -5,7 +5,7 @@ import org.apache.spark.sql.SparkSession
 import cn.sks.util.BuildOrgIDUtil
 object exp_dwd {
   val spark = SparkSession.builder()
-    .master("local[12]")
+    //.master("local[40]")
     .appName("exp_dwd")
     .config("spark.deploy.mode","client")
     .config("spark.cores.max", "8")
@@ -30,6 +30,8 @@ object exp_dwd {
     BuildOrgIDUtil.buildOrganizationExpID(spark,experience_work_df,"org_name","nsfc_experience_work").createOrReplaceTempView("o_nsfc_experience_work")
     BuildOrgIDUtil.buildOrganizationExpID(spark,experience_postdoctor_df,"org_name","nsfc_experience_postdoctor").createOrReplaceTempView("o_nsfc_experience_postdoctor")
     BuildOrgIDUtil.buildOrganizationID(spark,csai_person_work_experience_df,"org_name","csai_work_experience").createOrReplaceTempView("csai_person_work_experience")
+
+
 
 
 
@@ -98,7 +100,7 @@ object exp_dwd {
         |title,
         |"csai" as source
         |from  (select *,row_number() over (partition by person_id,org_id order by start_date) as tid from  csai_person_work_experience)a  where tid = 1
-        |""".stripMargin).createOrReplaceTempView("mid_wd_nsfc_experience_work")
+        |""".stripMargin).createOrReplaceTempView("mid_wd_nsfc_experience_work_0")
 
 
 
@@ -106,7 +108,7 @@ object exp_dwd {
       """
         |select
         |null,
-        |ifnull(ifnull(c.person_id,b.person_id),a.person_id) as person_id,
+        |ifnull(b.person_id_to,a.person_id) as person_id,
         |start_date,
         |end_date,
         |org_name,
@@ -114,9 +116,8 @@ object exp_dwd {
         |null,
         |title,
         |"csai" as source
-        |from  mid_wd_nsfc_experience_work a
-        |left join  dwb.wb_person_nsfc_sts_academician_csai_rel b on a.person_id =b.person_id_csai
-        |left join  dwb.wb_person_nsfc_sts_academician_rel c on a.person_id =c.person_id_academician
+        |from  mid_wd_nsfc_experience_work_0 a
+        |left join  dwb.wb_person_rel b on a.person_id = b.person_id_from
         |""".stripMargin).createOrReplaceTempView("mid_wd_nsfc_experience_work")
 
 
@@ -154,10 +155,10 @@ object exp_dwd {
 //        |from csai_person_work_experience a left join dwd.wd_nsfc_experience_work b on a.person_id = b.person_id and a.org_id = b.org_id where b.person_id is null or b.org_id is null
 //        |""".stripMargin)
 
-    spark.sql(
-      """
-        |select count(*) from dwd.wd_nsfc_experience_work
-        |""".stripMargin).show()
+//    spark.sql(
+//      """
+//        |select count(*) from dwd.wd_nsfc_experience_work
+//        |""".stripMargin).show()
 
 
   }

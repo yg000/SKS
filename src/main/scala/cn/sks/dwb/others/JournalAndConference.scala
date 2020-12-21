@@ -57,17 +57,5 @@ object JournalAndConference {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
   }
 }

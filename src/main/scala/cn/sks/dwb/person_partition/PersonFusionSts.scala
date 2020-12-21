@@ -8,7 +8,7 @@ object PersonFusionSts {
 
     val spark = SparkSession.builder()
       //.master("local[32]")
-      .appName("PersonFusionSts_1")
+      .appName("PersonFusionSts")
       .config("spark.local.dir", "/data/tmp")
       .config("spark.deploy.mode","4g")
       .config("spark.drivermemory","16g")
@@ -27,10 +27,9 @@ object PersonFusionSts {
     val person_to = spark.read.table("dwd.wd_person_nsfc")
     val person_to_with_title  = PersonUtil.getAddTitle(spark,person_to,"dwd.wd_product_person_ext_nsfc")
     val person_to_distinct_rule = person_to_with_title.dropDuplicates("zh_name","clean_title")
-    val person_to_distinct_rule_rel = PersonUtil.getDistinctRelation(spark,person_to_with_title,person_to_distinct_rule,"zh_name","clean_title","")
+    val person_to_distinct_rule_rel = PersonUtil.getDistinctRelation(spark,person_to_with_title,person_to_distinct_rule,"zh_name","clean_title","","zh_name+title")
 
     person_to_distinct_rule_rel.createOrReplaceTempView("person_to_distinct_rule_rel")
-
 
     spark.sql(
       """
@@ -57,7 +56,7 @@ object PersonFusionSts {
     val person_fusion_relation = person_fusion_1.unionAll(person_fusion_2).dropDuplicates("person_id_from")
     person_nsfc.unionAll(arp_distinct_pname_org_birthday).createOrReplaceTempView("person_nsfc_sts")
 
-    PersonUtil.getDeliverRelation (spark,distinct_relation,person_fusion_relation).unionAll(person_fusion_relation.select("person_id_from","person_id_to")).unionAll(person_to_distinct_rule_rel).dropDuplicates("person_id_from").repartition(2).createOrReplaceTempView("person_rel")
+    PersonUtil.getDeliverRelation (spark,distinct_relation,person_fusion_relation).unionAll(person_fusion_relation).unionAll(person_to_distinct_rule_rel).dropDuplicates("person_id_from").repartition(2).createOrReplaceTempView("person_rel")
     spark.sql(
       s"""
          |insert overwrite table dwb.wb_person_rel_partition partition (flag='$flag')
@@ -105,6 +104,7 @@ object PersonFusionSts {
         |,degree_country
         |,major
         |,brief_description
+        |,person_level
         |,a.source
         |,if(b.source is not null, union_flow_source(b.source,flow_source,b.rule),flow_source  )as flow_source
         |from person_nsfc_sts a left join get_source b on a.person_id = b.person_id_to

@@ -26,9 +26,6 @@ object Reward {
     spark.udf.register("clean_div", DefineUDF.clean_div _)
 
 //    //项目产出成果===================
-
-
-
     val product_reward_ndp = spark.sql(
       """
         |select
@@ -37,6 +34,7 @@ object Reward {
         |,clean_div(authors)  person_name
         |from ods.o_npd_award_nsfc
       """.stripMargin)
+
     //人产出成果-论文
     val business_re_nsfc = spark.sql(
       """

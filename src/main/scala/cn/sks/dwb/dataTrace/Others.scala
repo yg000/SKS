@@ -40,13 +40,14 @@ object Others {
 
     //keywords
 
+    //nsfc.o_product_keyword_nsfc_split
+    //
+    CommonUtil.getDataTrace(spark,"dwb.wb_keywords_product_rel_add_uuid","dwb.wb_relation_product_keyword")
+    CommonUtil.getDataTrace(spark,"dwd.wd_product_keyword_split_nsfc_translated_en","dwb.wb_relation_product_keyword")
+    CommonUtil.getDataTrace(spark,"ods.o_csai_product_journal_keyword","dwb.wb_relation_product_keyword")
 
-    CommonUtil.getDataTrace(spark,"dwb.wb_keywords_product_rel_add_uuid","dwb.wb_product_all_keyword")
-    CommonUtil.getDataTrace(spark,"dwb.wb_keywords_nsfc_csai_all","dwb.wb_product_all_keyword")
-    CommonUtil.getDataTrace(spark,"ods.o_csai_product_journal_keyword","dwb.wb_product_all_keyword")
-
-    CommonUtil.getDataTrace(spark,"dwb.wb_product_all_keyword","dwb.wb_keyword_subject")
-    CommonUtil.getDataTrace(spark,"dwb.wb_product_all_subject","dwb.wb_keyword_subject")
+    CommonUtil.getDataTrace(spark,"dwb.wb_relation_product_keyword","dwb.wb_keyword_subject")
+    CommonUtil.getDataTrace(spark,"dwb.wb_relation_product_subject","dwb.wb_keyword_subject")
 
 
 

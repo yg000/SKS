@@ -4,7 +4,27 @@ import net.sourceforge.pinyin4j.PinyinHelper
 import net.sourceforge.pinyin4j.format.{HanyuPinyinCaseType, HanyuPinyinOutputFormat, HanyuPinyinToneType, HanyuPinyinVCharType}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+
+
+
 object NameToPinyinUtil {
+
+  def nameToCleanPinyin(spark:SparkSession, origin_DF:DataFrame, origin_zh_name:String):DataFrame={
+    spark.sqlContext.udf.register("clean_fusion",(str:String) =>{
+      DefineUDF.clean_fusion(str)
+    })
+
+    spark.sqlContext.udf.register("isContainChinese",(str:String) =>{
+      DefineUDF.isContainChinese(str)
+    })
+    nameToPinyin(spark,origin_DF,origin_zh_name).createOrReplaceTempView("tmp")
+    spark.sql(
+      s"""
+        |select *,clean_fusion(en_name_normal) as clean_en_name_normal,clean_fusion(en_name_inverted) as clean_en_name_inverted,if(isContainChinese($origin_zh_name),'0','1') as typ  from tmp
+        |""".stripMargin).drop("en_name_normal").drop("en_name_inverted")
+  }
+
+
   def nameToPinyin(spark:SparkSession, origin_DF:DataFrame, origin_zh_name:String):DataFrame={
     // 正常翻译
     val normal_pinyin = "en_name_normal"
@@ -95,7 +115,6 @@ object NameToPinyinUtil {
         |select * from other_surname
         |""".stripMargin)
 
-    outDF.show(3)
     outDF
   }
 

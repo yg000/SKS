@@ -32,7 +32,17 @@ object Person {
     CommonUtil.getDataTrace(spark,"dwd.wd_person_ms","dwb.wb_person_nsfc_sts_academician_csai_ms")
 
 
+    CommonUtil.getDataTrace(spark,"dwd.wd_person_nsfc","dwb.wb_person_nsfc_sts_rel")
+    CommonUtil.getDataTrace(spark,"dwd.wd_person_arp","dwb.wb_person_nsfc_sts_rel")
 
+    CommonUtil.getDataTrace(spark,"dwb.wb_person_nsfc_sts","dwb.wb_person_nsfc_sts_academician_rel")
+    CommonUtil.getDataTrace(spark,"dwd.wd_person_academician","dwb.wb_person_nsfc_sts_academician_rel")
+
+    CommonUtil.getDataTrace(spark,"dwb.wb_person_nsfc_sts_academician","dwb.wb_person_nsfc_sts_academician_csai_rel")
+    CommonUtil.getDataTrace(spark,"dwd.wd_person_csai","dwb.wb_person_nsfc_sts_academician_csai_rel")
+
+    CommonUtil.getDataTrace(spark,"dwb.wb_person_nsfc_sts_academician_csai","dwb.wb_person_nsfc_sts_academician_csai_ms_rel")
+    CommonUtil.getDataTrace(spark,"dwd.wd_person_ms","dwb.wb_person_nsfc_sts_academician_csai_ms_rel")
 
 
 

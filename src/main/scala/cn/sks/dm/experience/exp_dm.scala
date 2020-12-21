@@ -7,7 +7,7 @@ import java.util
 
 object exp_dm {
   val spark = SparkSession.builder()
-    .master("local[12]")
+    //.master("local[12]")
     .appName("exp_dm")
     .config("spark.deploy.mode","client")
     .config("spark.cores.max", "8")

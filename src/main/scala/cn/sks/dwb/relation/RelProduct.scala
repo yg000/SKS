@@ -9,7 +9,7 @@ import cn.sks.util.{AchievementUtil, DefineUDF, NameToPinyinUtil}
 
 object RelProduct {
   val spark: SparkSession = SparkSession.builder()
-    .master("local[20]")
+    //.master("local[20]")
     .config("spark.deploy.mode", "clent")
     .config("executor-memory", "12g")
     .config("executor-cores", "6")
@@ -46,20 +46,20 @@ object RelProduct {
         |""".stripMargin).dropDuplicates()
       .write.format("hive").mode("overwrite").insertInto("dwb.wb_relation_product_person")
 
+
+
+
     //邻域和成果
-
-
-
 
     val nsfc_product_subject = spark.sql("select achievement_id,one_rank_id,one_rank_no,one_rank_name,two_rank_id,two_rank_no,two_rank_name from dwd.wd_product_subject_nsfc_csai")
     val csai_product_journal = spark.sql("select achievement_id,one_rank_id,one_rank_no,one_rank_name,two_rank_id,two_rank_no,two_rank_name from ods.o_csai_product_journal_subject")
     val csai_product_patent = spark.sql("select achievement_id,one_rank_id,one_rank_no,one_rank_name,two_rank_id,two_rank_no,two_rank_name from ods.o_csai_product_patent_subject")
 
-    val product_subject = nsfc_product_subject.union(csai_product_journal).union(csai_product_patent)
+    val product_subject = nsfc_product_subject.unionAll(csai_product_journal).unionAll(csai_product_patent)
     val one_rank_no = spark.sql("select one_rank_no,one_rank_no as tem from ods.o_csai_subject_constant")
     val two_rank_no = spark.sql("select two_rank_no  as one_rank_no,two_rank_no as tem from ods.o_csai_subject_constant")
 
-    val rank_all = one_rank_no.union(two_rank_no).dropDuplicates()
+    val rank_all = one_rank_no.unionAll(two_rank_no).dropDuplicates()
 
 
     val product_id = spark.sql("select achievement_id as id,achievement_id_origin as achievement_id from dwb.wb_product_rel")
@@ -96,7 +96,7 @@ object RelProduct {
       .dropDuplicates().repartition(50)
       .createOrReplaceTempView("result")
 
-     //spark.sql("insert overwrite table dwb.wb_relation_product_subject select * from result")
+    //spark.sql("insert overwrite table dwb.wb_relation_product_subject select * from result")
 
     //项目和成果
 
@@ -110,7 +110,7 @@ object RelProduct {
         |new_achievement_id
         |from product_subject
       """.stripMargin).repartition(10)
-      //.write.format("hive").mode("overwrite").insertInto("dwb.wb_relation_product_project")
+    //.write.format("hive").mode("overwrite").insertInto("dwb.wb_relation_product_project")
 
 
   }

@@ -1,12 +1,10 @@
 package cn.sks.dm.achievement
 
-import cn.sks.dm.achievement.RelProductOthers.spark
-import cn.sks.dm.organization.RelOrganization.spark
 import org.apache.spark.sql.SparkSession
 
 object RelProduct {
   val spark: SparkSession = SparkSession.builder()
-    .master("local[15]")
+    //.master("local[15]")
     .config("spark.deploy.mode", "clent")
     .config("executor-memory", "12g")
     .config("executor-cores", "6")
@@ -14,7 +12,7 @@ object RelProduct {
     //      .config("spark.drivermemory", "32g")
     //      .config("spark.cores.max", "16")
     .config("hive.metastore.uris", "thrift://10.0.82.132:9083")
-    .config("spark.sql.shuffle.partitions","20")
+    //.config("spark.sql.shuffle.partitions","20")
     .appName("RelProduct")
     .enableHiveSupport()
     .getOrCreate()
@@ -87,16 +85,16 @@ object RelProduct {
 
     //product_keyword
 
-//    spark.sql(
-//      """
-//        |insert overwrite table dm.dm_neo4j_product_keyword
-//        |select
-//        |distinct achievement_id,
-//        |keyword_id
-//        |from dwb.wb_relation_product_keyword a
-//        |join product_tb b on a.achievement_id = b.id
-//        |join dm.dm_neo4j_keyword c on a.keyword_id = c.id
-//        |""".stripMargin)
+    spark.sql(
+      """
+        |insert overwrite table dm.dm_neo4j_product_keyword
+        |select
+        |distinct achievement_id,
+        |keyword_id
+        |from dwb.wb_relation_product_keyword a
+        |join product_tb b on a.achievement_id = b.id
+        |join dm.dm_neo4j_keyword c on a.keyword_id = c.id
+        |""".stripMargin)
 
 
 //    //organization_prouduct

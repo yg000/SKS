@@ -34,7 +34,7 @@ object PersonToDwd {
     println("------ms-------")
     spark.sql(
       """
-        |insert into table dwd.wd_person_ms
+        |insert overwrite table dwd.wd_person_ms
         |select
         |   person_id
         |  ,person_name  as zh_name
@@ -50,7 +50,7 @@ object PersonToDwd {
     println("-----------arp--------------")
     spark.sql(
       """
-        |insert into dwd.wd_person_arp
+        |insert overwrite dwd.wd_person_arp
         |select
         |   person_id
         |  ,zh_name
@@ -97,7 +97,7 @@ object PersonToDwd {
     println("-----------csai--------------")
     spark.sql(
       """
-        |insert into dwd.wd_person_csai
+        |insert overwrite dwd.wd_person_csai
         |select
         |   a.person_id
         |  ,a.chinese_name         as zh_name
@@ -122,7 +122,7 @@ object PersonToDwd {
     println("-----------nsfc--------------")
     spark.sql(
       """
-        |insert into dwd.wd_person_nsfc
+        |insert overwrite dwd.wd_person_nsfc
         |select
         |    person_id
         |   ,zh_name

@@ -115,6 +115,7 @@ object PersonFusionAcademician {
         |,degree_country
         |,major
         |,brief_description
+        |,person_level
         |,a.source
         |,if(b.source is not null, union_flow_source(b.source,flow_source,b.rule),flow_source  )as flow_source
         |

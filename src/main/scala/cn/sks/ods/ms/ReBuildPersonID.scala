@@ -39,6 +39,11 @@ object ReBuildPersonID {
 //        |""".stripMargin)
 
 
+    import spark.sql
+    sql(
+      """
+        |
+        |""".stripMargin)
 
 
 //    spark.sql(

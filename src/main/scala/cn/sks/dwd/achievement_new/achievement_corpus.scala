@@ -46,43 +46,47 @@ object achievement_corpus {
         | from ods.o_corpus
         | lateral view explode(authors) as authors_mid
         |""".stripMargin).repartition(500)
-    .write.format("hive").mode("overwrite").saveAsTable("ods.o_corpus_authors")
+    //.write.format("hive").mode("overwrite").saveAsTable("ods.o_corpus_authors")
+
+
+
+
+
 
     //size(split(max(incitations),'; '))
+
+    spark.sql(
+      """
+        |select  id,concat_ws('#',collect_list(person_name)) as authors,max(first_author) as first_author from ods.o_corpus_authors
+        |""".stripMargin).createGlobalTempView("tmp_corpus_authors")
+
     spark.sql(
       """
         |select
-        |id
-        |,null
-        |,max(title)
-        |,if(!isContainChinese(max(title)),max(title),null) en_title
-        |,concat_ws('#',collect_list(person_name))
-        |,max(first_author)
-        |,null
-        |,max(year)
-        |,null
-        |,null
-        |,null
-        |,null
-        |,max(paperabstract)
-        |,max(doi)
-        |,max(doiurl)
-        |,max(journal_name)
-        |,max(journal_volume)
-        |,null
-        |,trim(split(max(journal_pages),'-')[0])
-        |,trim(split(max(journal_pages),'-')[1])
-        |,if(isContainChinese(max(title)),'cn','en')
-        |,null
-        |,null
-        |,null
-        |,null
-        |,null
-        |,'corpus'
-        |,null
-        |from ods.o_corpus_authors group by id
+        |title
+        |,b.authors
+        |,b.first_author
+        |,doi
+        |,doiurl
+        |,entities
+        |,fieldsofstudy
+        |,a.id
+        |,incitations
+        |,journalname
+        |,journalpages
+        |,journalvolume
+        |,magid
+        |,outcitations
+        |,paperabstract
+        |,pdfurls
+        |,pmid
+        |,s2pdfurl
+        |,s2url
+        |,sources
+        |,venue
+        |,year from ods.o_corpus a left join ods.o_corpus b on a.id = b.id
       """.stripMargin)
-      //.write.format("hive").mode("overwrite").insertInto("ods.o_product_corpus")
+      .write.format("hive").mode("overwrite").insertInto("ods.o_corpus_clean")
 
 
 
